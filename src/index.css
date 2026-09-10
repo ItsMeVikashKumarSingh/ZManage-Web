@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-canvas: #ffffff;
+    --color-paper: #f5f5f5;
+    --color-ash: #e5e5e5;
+    --color-charcoal: #171717;
+    --color-fog: #737373;
+    --color-electric: #2563eb;
+  }
+
+  body {
+    background-color: #ffffff;
+    color: #171717;
+  }
+}
+
+@layer components {
+  /* Dub Rice Paper Dotted Grid Pattern */
+  .bg-dotted-grid {
+    background-image: radial-gradient(#d4d4d4 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Dub Container Card */
+  .dub-card {
+    background-color: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+  }
+
+  .dub-card-paper {
+    background-color: #f5f5f5;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+  }
+
+  /* Dub Distinctive Form Input (Near-black 1px border) */
+  .dub-input {
+    background-color: #ffffff;
+    border: 1px solid #171717;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #171717;
+  }
+  .dub-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+
+  /* Dub Ghost Nav Button */
+  .dub-btn-ghost {
+    color: #171717;
+    border-radius: 9999px;
+    padding: 6px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 150ms ease;
+  }
+  .dub-btn-ghost:hover {
+    background-color: #f5f5f5;
+  }
+
+  /* Dub Outlined Button */
+  .dub-btn-outline {
+    background-color: #ffffff;
+    color: #171717;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 150ms ease;
+  }
+  .dub-btn-outline:hover {
+    background-color: #f5f5f5;
+    border-color: #d4d4d4;
+  }
+
+  /* Dub Primary Action Button (Near-black filled) */
+  .dub-btn-primary {
+    background-color: #0a0a0a;
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 150ms ease;
+    box-shadow: rgba(0, 0, 0, 0.05) 0px 1px 2px 0px;
+  }
+  .dub-btn-primary:hover {
+    background-color: #1f1f1f;
+  }
+
+  /* Dub Sapphire Brand Button */
+  .dub-btn-brand {
+    background-color: #2563eb;
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 150ms ease;
+  }
+  .dub-btn-brand:hover {
+    background-color: #1e40af;
+  }
+
+  /* Dub Feature Pill */
+  .dub-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid #e5e5e5;
+    background-color: #ffffff;
+  }
+}
