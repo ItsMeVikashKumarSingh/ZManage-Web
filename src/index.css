@@ -4,17 +4,37 @@
 
 @layer base {
   :root {
-    --color-canvas: #ffffff;
-    --color-paper: #f5f5f5;
-    --color-ash: #e5e5e5;
-    --color-charcoal: #171717;
-    --color-fog: #737373;
-    --color-electric: #2563eb;
+    --color-canvas: #fbfbf9;
+    --color-paper: #f4f3ee;
+    --color-ash: #eae8e4;
+    --color-charcoal: #141416;
+    --color-steel: #52525b;
+    --color-fog: #71717a;
+    --color-electric: #f59e0b;
+    --color-tally: #f59e0b;
+  }
+
+  html.dark {
+    --color-canvas: #0c0c0e;
+    --color-paper: #141417;
+    --color-ash: #232328;
+    --color-charcoal: #f4f4f5;
+    --color-steel: #a1a1aa;
+    --color-fog: #71717a;
+    --color-electric: #fbbf24;
+    --color-tally: #fbbf24;
+    color-scheme: dark;
   }
 
   body {
-    background-color: #ffffff;
-    color: #171717;
+    background-color: var(--color-canvas);
+    color: var(--color-charcoal);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  html.dark body {
+    background-color: #0c0c0e;
+    color: #f4f4f5;
   }
 }
 
@@ -24,18 +44,112 @@
     background-image: radial-gradient(#d4d4d4 1px, transparent 1px);
     background-size: 24px 24px;
   }
+  .dark .bg-dotted-grid {
+    background-image: radial-gradient(#27272a 1px, transparent 1px);
+  }
 
   /* Dub Container Card */
   .dub-card {
-    background-color: #ffffff;
-    border: 1px solid #e5e5e5;
+    background-color: var(--color-canvas);
+    border: 1px solid var(--color-ash);
     border-radius: 12px;
+  }
+  .dark .dub-card {
+    background-color: #121215;
+    border-color: #27272a;
   }
 
   .dub-card-paper {
-    background-color: #f5f5f5;
-    border: 1px solid #e5e5e5;
+    background-color: var(--color-paper);
+    border: 1px solid var(--color-ash);
     border-radius: 12px;
+  }
+  .dark .dub-card-paper {
+    background-color: #18181b;
+    border-color: #27272a;
+  }
+
+  /* Automatic Dark Mode Global Overrides & Fallbacks */
+  .dark .bg-canvas {
+    background-color: #09090b !important;
+  }
+  .dark .bg-white {
+    background-color: #121215 !important;
+  }
+  .dark .bg-paper {
+    background-color: #18181b !important;
+  }
+  .dark .bg-paper\/60 {
+    background-color: rgba(24, 24, 27, 0.8) !important;
+  }
+  .dark .border-ash {
+    border-color: #27272a !important;
+  }
+  .dark .border-smoke {
+    border-color: #3f3f46 !important;
+  }
+
+  /* Text Contrast Enforcement in Dark Mode */
+  .dark .text-charcoal {
+    color: #f4f4f5 !important;
+  }
+  .dark .text-steel {
+    color: #a1a1aa !important;
+  }
+  .dark .text-fog {
+    color: #71717a !important;
+  }
+
+  /* Table & Interactive Row Dark Overrides */
+  .dark thead {
+    background-color: #18181b !important;
+    border-color: #27272a !important;
+  }
+  .dark th {
+    color: #a1a1aa !important;
+    border-color: #27272a !important;
+  }
+  .dark td {
+    border-color: #27272a !important;
+  }
+  .dark tr.hover\:bg-paper\/40:hover,
+  .dark tr:hover {
+    background-color: rgba(39, 39, 42, 0.45) !important;
+  }
+  .dark .hover\:bg-paper:hover {
+    background-color: #1f1f23 !important;
+  }
+  .dark .hover\:bg-paper\/60:hover {
+    background-color: #1f1f23 !important;
+  }
+  .dark .divide-ash > :not([hidden]) ~ :not([hidden]) {
+    border-color: #27272a !important;
+  }
+
+  /* Progress Bars & Accent Containers in Dark Mode */
+  .dark .bg-charcoal {
+    background-color: #f4f4f5 !important;
+  }
+  .dark .bg-charcoal.text-white,
+  .dark .bg-charcoal .text-white {
+    color: #09090b !important;
+  }
+  .dark .bg-blue-50 {
+    background-color: rgba(37, 99, 235, 0.15) !important;
+    color: #60a5fa !important;
+  }
+  .dark .bg-emerald-50 {
+    background-color: rgba(22, 163, 74, 0.15) !important;
+    color: #4ade80 !important;
+  }
+  .dark .bg-amber-50 {
+    background-color: rgba(234, 88, 12, 0.15) !important;
+    color: #fb923c !important;
+  }
+  .dark .bg-red-50 {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
   }
 
   /* Dub Distinctive Form Input (Near-black 1px border) */
@@ -47,9 +161,18 @@
     font-size: 14px;
     color: #171717;
   }
+  .dark .dub-input {
+    background-color: #121215;
+    border: 1px solid #3f3f46;
+    color: #f4f4f5;
+  }
   .dub-input:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+  .dark .dub-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
   }
 
   /* Dub Ghost Nav Button */
@@ -61,8 +184,14 @@
     font-weight: 500;
     transition: all 150ms ease;
   }
+  .dark .dub-btn-ghost {
+    color: #f4f4f5;
+  }
   .dub-btn-ghost:hover {
     background-color: #f5f5f5;
+  }
+  .dark .dub-btn-ghost:hover {
+    background-color: #18181b;
   }
 
   /* Dub Outlined Button */
@@ -76,9 +205,18 @@
     font-weight: 500;
     transition: all 150ms ease;
   }
+  .dark .dub-btn-outline {
+    background-color: #121215;
+    color: #f4f4f5;
+    border-color: #27272a;
+  }
   .dub-btn-outline:hover {
     background-color: #f5f5f5;
     border-color: #d4d4d4;
+  }
+  .dark .dub-btn-outline:hover {
+    background-color: #18181b;
+    border-color: #3f3f46;
   }
 
   /* Dub Primary Action Button (Near-black filled) */
@@ -92,8 +230,15 @@
     transition: all 150ms ease;
     box-shadow: rgba(0, 0, 0, 0.05) 0px 1px 2px 0px;
   }
+  .dark .dub-btn-primary {
+    background-color: #f4f4f5;
+    color: #09090b;
+  }
   .dub-btn-primary:hover {
     background-color: #1f1f1f;
+  }
+  .dark .dub-btn-primary:hover {
+    background-color: #e4e4e7;
   }
 
   /* Dub Sapphire Brand Button */
@@ -106,8 +251,14 @@
     font-weight: 500;
     transition: all 150ms ease;
   }
+  .dark .dub-btn-brand {
+    background-color: #3b82f6;
+  }
   .dub-btn-brand:hover {
     background-color: #1e40af;
+  }
+  .dark .dub-btn-brand:hover {
+    background-color: #2563eb;
   }
 
   /* Dub Feature Pill */
@@ -121,5 +272,112 @@
     font-weight: 500;
     border: 1px solid #e5e5e5;
     background-color: #ffffff;
+  }
+  .dark .dub-pill {
+    border-color: #27272a;
+    background-color: #121215;
+    color: #f4f4f5;
+  }
+
+  /* Dub Badges */
+  .dub-badge-mint {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    background-color: #dcfce7;
+    color: #15803d;
+  }
+  .dark .dub-badge-mint {
+    background-color: rgba(22, 163, 74, 0.2);
+    color: #4ade80;
+    border: 1px solid rgba(74, 222, 128, 0.25);
+  }
+
+  .dub-badge-blue {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    background-color: #eff6ff;
+    color: #1d4ed8;
+  }
+  .dark .dub-badge-blue {
+    background-color: rgba(37, 99, 235, 0.2);
+    color: #60a5fa;
+    border: 1px solid rgba(96, 165, 250, 0.25);
+  }
+
+  .dub-badge-tangerine {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    background-color: #ffedd5;
+    color: #c2410c;
+  }
+  .dark .dub-badge-tangerine {
+    background-color: rgba(234, 88, 12, 0.2);
+    color: #fb923c;
+    border: 1px solid rgba(251, 146, 60, 0.25);
+  }
+
+  /* Editorial Production Desk Tokens */
+  .btn-tally-primary {
+    background-color: #f59e0b;
+    color: #141416;
+    border-radius: 9999px;
+    font-weight: 600;
+    padding: 10px 22px;
+    font-size: 14px;
+    transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 2px rgba(245, 158, 11, 0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-tally-primary:hover {
+    background-color: #d97706;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+  }
+  .btn-tally-primary:active {
+    transform: translateY(0);
+  }
+
+  .paper-card {
+    background-color: #ffffff;
+    border: 1px solid #eae8e4;
+    border-radius: 12px;
+    transition: all 200ms ease;
+  }
+  .dark .paper-card {
+    background-color: #121215;
+    border-color: #232328;
+  }
+
+  .broadsheet-divider {
+    border-color: #eae8e4;
+  }
+  .dark .broadsheet-divider {
+    border-color: #232328;
+  }
+
+  /* No Scrollbar Utility */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
   }
 }

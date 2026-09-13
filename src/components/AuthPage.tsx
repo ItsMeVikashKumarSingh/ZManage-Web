@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layers, ArrowRight, ShieldCheck, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles, Loader2 } from 'lucide-react';
 
 interface AuthPageProps {
   onSuccessLogin: (sessionData: { tenantId: string; clientName: string; token: string }) => void;
@@ -82,9 +82,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccessLogin, onBackToHome
           onClick={onBackToHome}
           className="inline-flex items-center gap-2 p-2 rounded-xl hover:bg-paper transition"
         >
-          <div className="w-9 h-9 rounded-lg bg-charcoal flex items-center justify-center text-white">
-            <Layers className="w-5 h-5 text-canvas" />
-          </div>
+          <img 
+            src="/zmanage-app-icon.png" 
+            alt="ZManage" 
+            className="w-9 h-9 rounded-lg object-contain shadow-xs" 
+          />
           <span className="font-satoshi font-semibold text-lg tracking-tight text-charcoal">
             ZManage
           </span>

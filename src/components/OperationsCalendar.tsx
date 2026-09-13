@@ -17,7 +17,7 @@ interface EventItem {
 const SAMPLE_EVENTS: EventItem[] = [
   {
     id: 'evt-1',
-    title: 'Arora Wedding — Sangeet & Cocktail',
+    title: 'Arora Wedding - Sangeet & Cocktail',
     venue: 'Taj Palace, Durbar Hall',
     date: '2026-09-12',
     startTime: '04:00 PM',
@@ -27,7 +27,7 @@ const SAMPLE_EVENTS: EventItem[] = [
   },
   {
     id: 'evt-2',
-    title: 'Kapoor Wedding — Reception',
+    title: 'Kapoor Wedding - Reception',
     venue: 'Grand Hyatt, Ballroom A',
     date: '2026-09-12',
     startTime: '06:00 PM',
@@ -105,7 +105,7 @@ export const OperationsCalendar: React.FC = () => {
           >
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-3 border-b border-white/5">
               <div>
-                <span className="text-xs font-mono text-cyber-cyan">{evt.startTime} – {evt.endTime}</span>
+                <span className="text-xs font-mono text-cyber-cyan">{evt.startTime} - {evt.endTime}</span>
                 <h3 className="text-base font-bold text-slate-100">{evt.title}</h3>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-slate-400">

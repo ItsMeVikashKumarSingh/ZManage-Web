@@ -1,15 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { Users, DownloadCloud, Phone, Check, Shield, Search, Loader2 } from 'lucide-react';
+import { 
+  Users, DownloadCloud, Phone, Check, Shield, Search, Loader2, 
+  Plus, Edit3, Trash2, X, Mail, DollarSign, UserCheck, Download, MoreVertical
+} from 'lucide-react';
 import { api, WorkerRecord, ImportCandidate } from '../../lib/api';
+import { exportToCsv } from '../../lib/exportUtils';
+
+const STANDARD_ROLES = [
+  'Lead Cinematographer',
+  'Camera Operator',
+  'Drone Pilot',
+  'Lighting Director / Gaffer',
+  'Sound Engineer',
+  'Video Editor',
+  'Colorist',
+  'Production Assistant',
+  'Grip / Rigging Tech',
+  'Photographer',
+  'Studio Manager',
+  'Other / Custom'
+];
 
 export const CrewView: React.FC = () => {
   const [workers, setWorkers] = useState<WorkerRecord[]>([]);
   const [candidates, setCandidates] = useState<Array<ImportCandidate & { selected: boolean }>>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showImportModal, setShowImportModal] = useState<boolean>(false);
+  const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const [editingWorker, setEditingWorker] = useState<WorkerRecord | null>(null);
   const [defaultDayRate, setDefaultDayRate] = useState<number>(4500);
   const [isImporting, setIsImporting] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const [customRoleInput, setCustomRoleInput] = useState<string>('');
+  const [editingCustomRole, setEditingCustomRole] = useState<string>('');
+  const [defaultImportWorkerType, setDefaultImportWorkerType] = useState<'freelance' | 'contractor' | 'in_house'>('freelance');
+
+  // Row Action Menu State (Three-dot dropdown)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  // New Worker Form
+  const [newWorker, setNewWorker] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    primary_role: STANDARD_ROLES[0],
+    worker_type: 'freelance' as const,
+    day_rate: 3500,
+    upi_id: '',
+    bank_account: '',
+    ifsc: ''
+  });
 
   const loadWorkers = async () => {
     try {
@@ -18,7 +62,7 @@ export const CrewView: React.FC = () => {
       const data = await api.getWorkers();
       setWorkers(data || []);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to fetch crew members');
+      setErrorMsg(err.message || 'Failed to fetch team members');
     } finally {
       setLoading(false);
     }
@@ -32,7 +76,7 @@ export const CrewView: React.FC = () => {
         selected: !c.is_already_worker
       }));
       setCandidates(mapped);
-    } catch (err: any) {
+    } catch {
       // Non-blocking
     }
   };
@@ -40,6 +84,12 @@ export const CrewView: React.FC = () => {
   useEffect(() => {
     loadWorkers();
     loadCandidates();
+  }, []);
+
+  useEffect(() => {
+    const handleOutsideClick = () => setOpenMenuId(null);
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
   }, []);
 
   const allSelected = candidates.length > 0 && candidates.filter(c => !c.is_already_worker).every(c => c.selected);
@@ -65,11 +115,11 @@ export const CrewView: React.FC = () => {
           name: c.name,
           phone: c.phone || '+91 98000 00000',
           email: c.email,
-          primary_role: c.auth_role === 'admin' ? 'lead_photographer' : 'cinematographer',
-          worker_type: 'freelance',
+          primary_role: c.auth_role || 'Specialist',
+          worker_type: defaultImportWorkerType,
           day_rate: defaultDayRate
         })),
-        default_worker_type: 'freelance',
+        default_worker_type: defaultImportWorkerType,
         default_day_rate: defaultDayRate
       });
 
@@ -83,23 +133,142 @@ export const CrewView: React.FC = () => {
     }
   };
 
+  const handleCreateWorker = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsSubmitting(true);
+      const effectiveRole = newWorker.primary_role === 'Other / Custom' 
+        ? (customRoleInput.trim() || 'Specialist') 
+        : (newWorker.primary_role.trim() || 'Team Member');
+
+      await api.createWorker({
+        name: newWorker.name,
+        phone: newWorker.phone,
+        email: newWorker.email || undefined,
+        primary_role: effectiveRole,
+        worker_type: newWorker.worker_type,
+        day_rate: Number(newWorker.day_rate) || 0,
+        currency: 'INR',
+        payment_details: {
+          upi_id: newWorker.upi_id || undefined,
+          bank_account: newWorker.bank_account || undefined,
+          ifsc: newWorker.ifsc || undefined
+        },
+        status: 'active'
+      });
+      await loadWorkers();
+      setShowAddModal(false);
+      setCustomRoleInput('');
+      setNewWorker({
+        name: '',
+        phone: '',
+        email: '',
+        primary_role: STANDARD_ROLES[0],
+        worker_type: 'freelance',
+        day_rate: 3500,
+        upi_id: '',
+        bank_account: '',
+        ifsc: ''
+      });
+    } catch (err: any) {
+      alert(err.message || 'Failed to add team member');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveEditWorker = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingWorker) return;
+    try {
+      setIsSubmitting(true);
+      const effectiveRole = editingWorker.primary_role === 'Other / Custom'
+        ? (editingCustomRole.trim() || 'Specialist')
+        : (editingWorker.primary_role.trim() || 'Team Member');
+
+      await api.updateWorker(editingWorker.id, {
+        name: editingWorker.name,
+        phone: editingWorker.phone,
+        email: editingWorker.email,
+        primary_role: effectiveRole,
+        worker_type: editingWorker.worker_type,
+        day_rate: Number(editingWorker.day_rate) || 0,
+        status: editingWorker.status,
+        payment_details: editingWorker.payment_details
+      });
+      await loadWorkers();
+      setEditingWorker(null);
+      setEditingCustomRole('');
+    } catch (err: any) {
+      alert(err.message || 'Failed to update member');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteWorker = async (id: string) => {
+    if (!confirm('Are you sure you want to remove this member from the team roster?')) return;
+    try {
+      setDeletingId(id);
+      await api.deleteWorker(id);
+      await loadWorkers();
+    } catch (err: any) {
+      alert(err.message || 'Failed to remove worker');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const filteredWorkers = workers.filter(w => {
+    const q = searchQuery.toLowerCase();
+    return (w.name || '').toLowerCase().includes(q) ||
+           (w.primary_role || '').toLowerCase().includes(q) ||
+           (w.phone || '').toLowerCase().includes(q) ||
+           (w.email || '').toLowerCase().includes(q);
+  });
+
+  const handleExportCrew = () => {
+    exportToCsv('team_workforce_roster', filteredWorkers, [
+      { header: 'Member Name', accessor: w => w.name },
+      { header: 'Primary Role', accessor: w => w.primary_role },
+      { header: 'Employment Type', accessor: w => w.worker_type },
+      { header: 'Phone', accessor: w => w.phone || '' },
+      { header: 'Email', accessor: w => w.email || '' },
+      { header: 'Day Rate (INR)', accessor: w => w.day_rate || 0 },
+      { header: 'Payment Details', accessor: w => w.payment_details?.upi_id || w.payment_details?.bank_account || '' },
+      { header: 'Status', accessor: w => w.status }
+    ]);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-satoshi font-semibold text-charcoal">Team & Freelancers</h1>
-          <p className="text-xs text-steel">Manage crew members, day rates, and 1-tap user onboarding from studio staff.</p>
+          <h1 className="text-xl font-satoshi font-semibold text-charcoal flex items-center gap-2">
+            <Users className="w-5 h-5 text-electric" /> Team & Workforce Roster
+          </h1>
+          <p className="text-xs text-steel max-w-xl">
+            Manage staff, contractors, day-rate agreements, and 1-tap user onboarding across any project.
+          </p>
         </div>
 
-        <button
-          onClick={() => {
-            loadCandidates();
-            setShowImportModal(true);
-          }}
-          className="dub-btn-outline text-xs px-4 py-2 flex items-center gap-1.5 text-charcoal hover:bg-paper"
-        >
-          <DownloadCloud className="w-3.5 h-3.5 text-electric" /> 1-Tap Team Onboarding
-        </button>
+        <div className="flex items-center gap-2 shrink-0 flex-nowrap">
+          <button
+            onClick={() => {
+              loadCandidates();
+              setShowImportModal(true);
+            }}
+            className="dub-btn-outline text-xs px-3.5 py-2 flex items-center gap-1.5 text-charcoal hover:bg-paper cursor-pointer shrink-0"
+          >
+            <DownloadCloud className="w-3.5 h-3.5 text-electric" /> 1-Tap Sync
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="dub-btn-primary text-xs px-4 py-2 flex items-center gap-1.5 cursor-pointer shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add Member
+          </button>
+        </div>
       </div>
 
       {errorMsg && (
@@ -109,72 +278,454 @@ export const CrewView: React.FC = () => {
         </div>
       )}
 
-      <div className="dub-card overflow-hidden bg-white">
+      {/* Search & Export Toolbar */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="w-3.5 h-3.5 text-fog absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search team by name, role, or phone..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="dub-input w-full pl-10 text-xs"
+          />
+        </div>
+
+        <button
+          onClick={handleExportCrew}
+          className="dub-btn-outline text-xs px-3 py-1.5 flex items-center gap-1.5 shrink-0 cursor-pointer"
+          title="Export crew to CSV"
+        >
+          <Download className="w-3.5 h-3.5 text-electric" />
+          <span>Export CSV</span>
+        </button>
+      </div>
+
+      {/* Roster Table */}
+      <div className="dub-card overflow-hidden bg-white border border-ash">
         {loading ? (
           <div className="p-12 text-center flex flex-col items-center justify-center gap-2">
             <Loader2 className="w-5 h-5 text-electric animate-spin" />
-            <span className="text-xs text-steel">Loading active crew roster from ZManage-APIs...</span>
+            <span className="text-xs text-steel">Loading workforce from ZManage-APIs...</span>
           </div>
-        ) : workers.length === 0 ? (
+        ) : filteredWorkers.length === 0 ? (
           <div className="p-12 text-center text-xs text-steel">
-            No crew members currently added. Use "1-Tap Team Onboarding" to sync registered staff.
+            No team members found. Click <span className="font-semibold text-charcoal">Add Member</span> or use 1-Tap Sync.
           </div>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-paper text-steel text-[11px] font-medium uppercase tracking-wider border-b border-ash">
-              <tr>
-                <th className="py-3 px-4">Name & Contact</th>
-                <th className="py-3 px-4">Role</th>
-                <th className="py-3 px-4">Type</th>
-                <th className="py-3 px-4">Day Rate</th>
-                <th className="py-3 px-4">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ash text-charcoal">
-              {workers.map(w => (
-                <tr key={w.id} className="hover:bg-paper/50 transition">
-                  <td className="py-3.5 px-4">
-                    <div className="font-medium text-charcoal text-sm">{w.name}</div>
-                    <div className="text-xs text-fog font-mono flex items-center gap-1 mt-0.5">
-                      <Phone className="w-3 h-3 text-fog" /> {w.phone || w.email}
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span className="dub-pill text-[11px] py-0.5 px-2 bg-paper text-steel uppercase font-mono">
-                      {(w.primary_role || '').replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 capitalize text-xs text-steel">
-                    {(w.worker_type || '').replace('_', ' ')}
-                  </td>
-                  <td className="py-3.5 px-4 font-mono text-xs font-semibold text-charcoal">
-                    ₹{Number(w.day_rate).toLocaleString()}
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span className="inline-flex items-center gap-1 text-xs text-vividGreen font-medium">
-                      <span className="w-2 h-2 rounded-full bg-vividGreen" /> {w.status}
-                    </span>
-                  </td>
+          <div className="overflow-x-auto min-h-[240px]">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-paper/60 text-steel font-medium border-b border-ash">
+                <tr>
+                  <th className="py-2.5 px-4">NAME & CONTACT</th>
+                  <th className="py-2.5 px-4">ROLE</th>
+                  <th className="py-2.5 px-4">TYPE</th>
+                  <th className="py-2.5 px-4">DAY RATE</th>
+                  <th className="py-2.5 px-4">STATUS</th>
+                  <th className="py-2.5 px-4 text-right">ACTIONS</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-ash text-charcoal">
+                {filteredWorkers.map((w, index) => {
+                  const isNearBottom = index >= filteredWorkers.length - 2 && filteredWorkers.length > 2;
+                  return (
+                    <tr key={w.id} className="hover:bg-paper/40 transition">
+                      <td className="py-3 px-4">
+                        <div className="font-medium text-charcoal">{w.name}</div>
+                        <div className="text-[11px] text-fog font-mono flex items-center gap-1 mt-0.5">
+                          <Phone className="w-2.5 h-2.5 text-fog" /> {w.phone || 'No phone'}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="dub-pill text-[10px] py-0.5 px-2 bg-paper text-steel uppercase font-mono">
+                          {(w.primary_role || '').replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 capitalize text-steel">
+                        {(w.worker_type || '').replace('_', ' ')}
+                      </td>
+                      <td className="py-3 px-4 font-mono font-semibold text-charcoal">
+                        ₹{Number(w.day_rate).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-vividGreen font-medium capitalize">
+                          <span className="w-1.5 h-1.5 rounded-full bg-vividGreen" /> {w.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="relative inline-block text-left">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuId(openMenuId === w.id ? null : w.id);
+                            }}
+                            className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                              openMenuId === w.id
+                                ? 'bg-paper dark:bg-zinc-800 border-ash dark:border-zinc-700 text-charcoal dark:text-zinc-100 shadow-xs'
+                                : 'border-transparent hover:border-ash dark:hover:border-zinc-700 hover:bg-paper dark:hover:bg-zinc-800 text-steel hover:text-charcoal dark:hover:text-zinc-200'
+                            }`}
+                            title="More actions"
+                            aria-label="More actions"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+
+                          {openMenuId === w.id && (
+                            <div 
+                              onClick={(e) => e.stopPropagation()}
+                              className={`absolute right-0 w-48 bg-white dark:bg-zinc-900 border border-ash dark:border-zinc-800 rounded-xl shadow-floating p-1 z-40 text-left space-y-0.5 animate-in fade-in zoom-in-95 duration-100 ${
+                                isNearBottom ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  setEditingWorker(w);
+                                  if (!STANDARD_ROLES.includes(w.primary_role)) {
+                                    setEditingCustomRole(w.primary_role);
+                                  } else {
+                                    setEditingCustomRole('');
+                                  }
+                                }}
+                                className="w-full px-2.5 py-1.5 rounded-lg hover:bg-paper dark:hover:bg-zinc-800 text-xs font-medium text-charcoal dark:text-zinc-200 flex items-center gap-2 transition cursor-pointer"
+                              >
+                                <Edit3 className="w-3.5 h-3.5 text-steel dark:text-zinc-400 shrink-0" />
+                                <span>Edit Member Details</span>
+                              </button>
+
+                              <div className="border-t border-ash dark:border-zinc-800 my-1" />
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  handleDeleteWorker(w.id);
+                                }}
+                                disabled={deletingId === w.id}
+                                className="w-full px-2.5 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
+                              >
+                                {deletingId === w.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                                ) : (
+                                  <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                )}
+                                <span>Remove Member</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
-      {/* 1-Tap Onboarding Modal (Dub Style) */}
+      {/* Add Worker Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="dub-card shadow-floating p-6 bg-white w-full max-w-md space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-ash">
+              <div>
+                <h2 className="text-sm font-semibold font-satoshi text-charcoal">Add Team Member / Contractor</h2>
+                <p className="text-xs text-steel">Add custom workforce members, rates, and banking details.</p>
+              </div>
+              <button onClick={() => setShowAddModal(false)} className="text-fog hover:text-charcoal">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateWorker} className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-steel mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Sarah Jenkins"
+                  value={newWorker.name}
+                  onChange={e => setNewWorker({ ...newWorker, name: e.target.value })}
+                  className="dub-input w-full text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-steel mb-1">Phone Number *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="+91 98765 43210"
+                    value={newWorker.phone}
+                    onChange={e => setNewWorker({ ...newWorker, phone: e.target.value })}
+                    className="dub-input w-full text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-steel mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="sarah@example.com"
+                    value={newWorker.email}
+                    onChange={e => setNewWorker({ ...newWorker, email: e.target.value })}
+                    className="dub-input w-full text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-steel mb-1">Primary Role *</label>
+                  <select
+                    value={STANDARD_ROLES.includes(newWorker.primary_role) ? newWorker.primary_role : 'Other / Custom'}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setNewWorker({ ...newWorker, primary_role: val });
+                      if (val !== 'Other / Custom') {
+                        setCustomRoleInput('');
+                      }
+                    }}
+                    className="dub-input w-full text-xs font-medium"
+                  >
+                    {STANDARD_ROLES.map(role => (
+                      <option key={role} value={role}>{role}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-steel mb-1">Contract / Worker Type *</label>
+                  <select
+                    value={newWorker.worker_type}
+                    onChange={e => setNewWorker({ ...newWorker, worker_type: e.target.value as any })}
+                    className="dub-input w-full text-xs font-medium"
+                  >
+                    <option value="freelance">Freelance</option>
+                    <option value="contractor">Contractor</option>
+                    <option value="in_house">In-House Staff</option>
+                  </select>
+                </div>
+              </div>
+
+              {newWorker.primary_role === 'Other / Custom' && (
+                <div>
+                  <label className="block text-xs font-medium text-steel mb-1">Specify Custom Role *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Boom Operator, Steadicam Specialist"
+                    value={customRoleInput}
+                    onChange={e => setCustomRoleInput(e.target.value)}
+                    className="dub-input w-full text-xs"
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-steel mb-1">Agreed Day Rate (₹)</label>
+                  <input
+                    type="number"
+                    value={newWorker.day_rate === 0 ? '' : newWorker.day_rate}
+                    onChange={e => setNewWorker({ ...newWorker, day_rate: e.target.value === '' ? 0 : Number(e.target.value) })}
+                    className="dub-input w-full text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-steel mb-1">UPI ID for Payouts</label>
+                  <input
+                    type="text"
+                    placeholder="username@upi"
+                    value={newWorker.upi_id}
+                    onChange={e => setNewWorker({ ...newWorker, upi_id: e.target.value })}
+                    className="dub-input w-full text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-ash">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="dub-btn-outline text-xs px-3 py-1.5"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="dub-btn-primary text-xs px-4 py-1.5 flex items-center gap-1.5"
+                >
+                  {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Add to Roster
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Worker Modal */}
+      {editingWorker && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="dub-card shadow-floating p-6 bg-white w-full max-w-md space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-ash">
+              <h2 className="text-sm font-semibold font-satoshi text-charcoal">Edit Member Profile</h2>
+              <button onClick={() => setEditingWorker(null)} className="text-fog hover:text-charcoal">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditWorker} className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-steel mb-1">Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editingWorker.name}
+                  onChange={e => setEditingWorker({ ...editingWorker, name: e.target.value })}
+                  className="dub-input w-full text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-steel mb-1">Phone</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingWorker.phone}
+                    onChange={e => setEditingWorker({ ...editingWorker, phone: e.target.value })}
+                    className="dub-input w-full text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-steel mb-1">Contract / Worker Type *</label>
+                  <select
+                    value={editingWorker.worker_type || 'freelance'}
+                    onChange={e => setEditingWorker({ ...editingWorker, worker_type: e.target.value as any })}
+                    className="dub-input w-full text-xs font-medium"
+                  >
+                    <option value="freelance">Freelance</option>
+                    <option value="contractor">Contractor</option>
+                    <option value="in_house">In-House Staff</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-steel mb-1">Role *</label>
+                <select
+                  value={STANDARD_ROLES.includes(editingWorker.primary_role) ? editingWorker.primary_role : 'Other / Custom'}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setEditingWorker({ ...editingWorker, primary_role: val });
+                    if (val !== 'Other / Custom') {
+                      setEditingCustomRole('');
+                    }
+                  }}
+                  className="dub-input w-full text-xs font-medium"
+                >
+                  {STANDARD_ROLES.map(role => (
+                    <option key={role} value={role}>{role}</option>
+                  ))}
+                </select>
+              </div>
+
+              {(!STANDARD_ROLES.includes(editingWorker.primary_role) || editingWorker.primary_role === 'Other / Custom') && (
+                <div>
+                  <label className="block text-xs font-medium text-steel mb-1">Specify Custom Role *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Steadicam Specialist, Colorist"
+                    value={editingCustomRole}
+                    onChange={e => setEditingCustomRole(e.target.value)}
+                    className="dub-input w-full text-xs"
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-steel mb-1">Day Rate (₹)</label>
+                  <input
+                    type="number"
+                    value={editingWorker.day_rate === 0 ? '' : (editingWorker.day_rate ?? '')}
+                    onChange={e => setEditingWorker({ ...editingWorker, day_rate: e.target.value === '' ? 0 : Number(e.target.value) })}
+                    className="dub-input w-full text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-steel mb-1">Status</label>
+                  <select
+                    value={editingWorker.status}
+                    onChange={e => setEditingWorker({ ...editingWorker, status: e.target.value as any })}
+                    className="dub-input w-full text-xs"
+                  >
+                    <option value="active">Active</option>
+                    <option value="on_leave">On Leave</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-steel mb-1">UPI ID for Settlements</label>
+                <input
+                  type="text"
+                  value={editingWorker.payment_details?.upi_id || ''}
+                  onChange={e => setEditingWorker({
+                    ...editingWorker,
+                    payment_details: { ...editingWorker.payment_details, upi_id: e.target.value }
+                  })}
+                  className="dub-input w-full text-xs font-mono"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-ash">
+                <button
+                  type="button"
+                  onClick={() => setEditingWorker(null)}
+                  className="dub-btn-outline text-xs px-3 py-1.5"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="dub-btn-primary text-xs px-4 py-1.5 flex items-center gap-1.5"
+                >
+                  {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Save Profile
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 1-Tap Onboarding Modal */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="dub-card shadow-floating p-6 bg-white w-full max-w-lg space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-ash">
               <div>
                 <h2 className="text-sm font-semibold font-satoshi text-charcoal">
-                  1-Tap Team Onboarding from Studio
+                  1-Tap Team Onboarding
                 </h2>
                 <p className="text-xs text-steel">
-                  Import registered platform users and studio staff directly into the operations roster.
+                  Import registered platform users and staff directly into the operations roster.
                 </p>
               </div>
+              <button onClick={() => setShowImportModal(false)} className="text-fog hover:text-charcoal">
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
             <div className="space-y-3">
@@ -190,7 +741,7 @@ export const CrewView: React.FC = () => {
 
               <div className="divide-y divide-ash border border-ash rounded-xl max-h-56 overflow-y-auto">
                 {candidates.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-steel">No new registered platform users found.</div>
+                  <div className="p-4 text-center text-xs text-steel">No registered platform users found.</div>
                 ) : (
                   candidates.map(c => (
                     <div
@@ -230,16 +781,32 @@ export const CrewView: React.FC = () => {
                 )}
               </div>
 
-              <div className="pt-2">
-                <label className="block text-xs font-medium text-steel mb-1">
-                  Default Day Rate for Imported Members (₹)
-                </label>
-                <input
-                  type="number"
-                  value={defaultDayRate}
-                  onChange={e => setDefaultDayRate(Number(e.target.value))}
-                  className="dub-input w-full text-xs font-mono"
-                />
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <div>
+                  <label className="block text-xs font-medium text-steel mb-1">
+                    Contract / Worker Type *
+                  </label>
+                  <select
+                    value={defaultImportWorkerType}
+                    onChange={e => setDefaultImportWorkerType(e.target.value as any)}
+                    className="dub-input w-full text-xs font-medium"
+                  >
+                    <option value="freelance">Freelance</option>
+                    <option value="contractor">Contractor</option>
+                    <option value="in_house">In-House Staff</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-steel mb-1">
+                    Default Day Rate (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={defaultDayRate === 0 ? '' : defaultDayRate}
+                    onChange={e => setDefaultDayRate(e.target.value === '' ? 0 : Number(e.target.value))}
+                    className="dub-input w-full text-xs font-mono"
+                  />
+                </div>
               </div>
             </div>
 

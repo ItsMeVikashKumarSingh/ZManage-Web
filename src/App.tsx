@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { LandingPage } from './components/LandingPage';
 import { AuthPage } from './components/AuthPage';
 import { DashboardLayout } from './components/DashboardLayout';
+import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
+import { TermsOfServicePage } from './components/TermsOfServicePage';
+import { SecurityPage } from './components/SecurityPage';
+import { ProjectRecord } from './lib/api';
 
-type AppScreen = 'landing' | 'auth' | 'dashboard';
-
-interface SessionData {
+export interface SessionData {
   tenantId: string;
   projectId?: string;
   projectName?: string;
@@ -13,9 +16,102 @@ interface SessionData {
   token: string;
 }
 
+const LandingRoute: React.FC<{
+  session: SessionData | null;
+  onEnterDemo: () => void;
+}> = ({ session, onEnterDemo }) => {
+  const navigate = useNavigate();
+
+  return (
+    <LandingPage
+      hasActiveSession={Boolean(session?.token)}
+      onGoToDashboard={() => navigate('/dashboard')}
+      onNavigateLogin={() => navigate('/login')}
+      onEnterDemo={() => {
+        onEnterDemo();
+        navigate('/dashboard');
+      }}
+    />
+  );
+};
+
+const LoginRoute: React.FC<{
+  session: SessionData | null;
+  onLoginSuccess: (sessionData: SessionData) => void;
+}> = ({ session, onLoginSuccess }) => {
+  const navigate = useNavigate();
+
+  if (session?.token) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return (
+    <AuthPage
+      onSuccessLogin={(data) => {
+        onLoginSuccess(data);
+        navigate('/dashboard');
+      }}
+      onBackToHome={() => navigate('/')}
+    />
+  );
+};
+
+const DashboardRoute: React.FC<{
+  session: SessionData | null;
+  onLogout: () => void;
+  onSwitchProject: (p: ProjectRecord) => void;
+}> = ({ session, onLogout, onSwitchProject }) => {
+  const navigate = useNavigate();
+
+  if (!session?.token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return (
+    <DashboardLayout
+      clientName={session?.clientName || 'Aura Creative Studios'}
+      projectName={session?.projectName}
+      projectId={session?.projectId || session?.tenantId}
+      onLogout={() => {
+        onLogout();
+        navigate('/login');
+      }}
+      onSwitchProject={onSwitchProject}
+    />
+  );
+};
+
+const PrivacyRoute: React.FC = () => {
+  const navigate = useNavigate();
+  return <PrivacyPolicyPage onBackToHome={() => navigate('/')} />;
+};
+
+const TermsRoute: React.FC = () => {
+  const navigate = useNavigate();
+  return <TermsOfServicePage onBackToHome={() => navigate('/')} />;
+};
+
+const SecurityRoute: React.FC = () => {
+  const navigate = useNavigate();
+  return <SecurityPage onBackToHome={() => navigate('/')} />;
+};
+
 export const App: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<AppScreen>('landing');
-  const [session, setSession] = useState<SessionData | null>(null);
+  const [session, setSession] = useState<SessionData | null>(() => {
+    const stored = localStorage.getItem('zmanage_session') || localStorage.getItem('zresource_session');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed?.token && (parsed?.tenantId || parsed?.projectId)) {
+          return parsed;
+        }
+      } catch {
+        localStorage.removeItem('zmanage_session');
+        localStorage.removeItem('zresource_session');
+      }
+    }
+    return null;
+  });
 
   useEffect(() => {
     // 1. Check for URL parameters (Direct SSO handoff from Zorvik-Tech client portal)
@@ -37,39 +133,23 @@ export const App: React.FC = () => {
       localStorage.setItem('zmanage_session', JSON.stringify(incomingSession));
       localStorage.setItem('zresource_session', JSON.stringify(incomingSession));
       setSession(incomingSession);
-      setCurrentScreen('dashboard');
 
-      // Clean up URL parameters cleanly
-      window.history.replaceState({}, document.title, window.location.pathname);
-      return;
-    }
-
-    // 2. Check for existing session in localStorage
-    const stored = localStorage.getItem('zmanage_session') || localStorage.getItem('zresource_session');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed?.token && (parsed?.tenantId || parsed?.projectId)) {
-          setSession(parsed);
-          setCurrentScreen('dashboard'); // Persist and stay inside dashboard across refreshes
-        }
-      } catch (e) {
-        localStorage.removeItem('zmanage_session');
-        localStorage.removeItem('zresource_session');
-      }
+      // Clean up URL search parameters cleanly and route to /dashboard
+      const targetPath = window.location.pathname.startsWith('/dashboard')
+        ? window.location.pathname
+        : '/dashboard';
+      window.history.replaceState({}, document.title, targetPath);
     }
   }, []);
 
   const handleLoginSuccess = (sessionData: SessionData) => {
     setSession(sessionData);
-    setCurrentScreen('dashboard');
   };
 
   const handleLogout = () => {
     localStorage.removeItem('zmanage_session');
     localStorage.removeItem('zresource_session');
     setSession(null);
-    setCurrentScreen('landing');
   };
 
   const handleEnterDemo = () => {
@@ -83,35 +163,69 @@ export const App: React.FC = () => {
     localStorage.setItem('zmanage_session', JSON.stringify(demoSession));
     localStorage.setItem('zresource_session', JSON.stringify(demoSession));
     setSession(demoSession);
-    setCurrentScreen('dashboard');
   };
 
-  if (currentScreen === 'auth') {
-    return (
-      <AuthPage
-        onSuccessLogin={handleLoginSuccess}
-        onBackToHome={() => setCurrentScreen('landing')}
-      />
-    );
-  }
+  const handleSwitchProject = (p: ProjectRecord) => {
+    setSession(prev => {
+      if (!prev) return null;
+      const updated = {
+        ...prev,
+        projectId: p.id,
+        tenantId: p.id,
+        projectName: p.name
+      };
+      localStorage.setItem('zmanage_session', JSON.stringify(updated));
+      localStorage.setItem('zresource_session', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
-  if (currentScreen === 'dashboard') {
-    return (
-      <DashboardLayout
-        clientName={session?.clientName || 'Aura Creative Studios'}
-        projectName={session?.projectName}
-        onLogout={handleLogout}
-      />
-    );
-  }
-
-  // Default: Landing Page
   return (
-    <LandingPage
-      hasActiveSession={Boolean(session?.token)}
-      onGoToDashboard={() => setCurrentScreen('dashboard')}
-      onNavigateLogin={() => setCurrentScreen('auth')}
-      onEnterDemo={handleEnterDemo}
-    />
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/"
+          element={<LandingRoute session={session} onEnterDemo={handleEnterDemo} />}
+        />
+        <Route
+          path="/login"
+          element={<LoginRoute session={session} onLoginSuccess={handleLoginSuccess} />}
+        />
+        <Route path="/auth" element={<Navigate to="/login" replace />} />
+        <Route
+          path="/dashboard"
+          element={
+            <DashboardRoute
+              session={session}
+              onLogout={handleLogout}
+              onSwitchProject={handleSwitchProject}
+            />
+          }
+        />
+        <Route
+          path="/dashboard/:tab"
+          element={
+            <DashboardRoute
+              session={session}
+              onLogout={handleLogout}
+              onSwitchProject={handleSwitchProject}
+            />
+          }
+        />
+        <Route
+          path="/privacy"
+          element={<PrivacyRoute />}
+        />
+        <Route
+          path="/terms"
+          element={<TermsRoute />}
+        />
+        <Route
+          path="/security"
+          element={<SecurityRoute />}
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
