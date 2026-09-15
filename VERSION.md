@@ -1,5 +1,21 @@
 # ZManage-Web Changelog
 
+## [0.9.1] - 2026-09-16
+### One-Click Demo Removal, Schedule a Demo Modal & Localhost/URL Normalization
+- **Schedule a Demo Modal (`ScheduleDemoModal.tsx`, `LandingPage.tsx`, `App.tsx`)**:
+  - Removed mock session injection (`handleEnterDemo` / `onEnterDemo`) that routed unauthenticated visitors to `/dashboard` and resulted in "Access Restricted" screens.
+  - Implemented high-conversion `ScheduleDemoModal` collecting Studio Name, Contact Person, Work Email, Phone/WhatsApp, Gear Fleet Size, Preferred Time Slot, and Custom Notes.
+  - Integrated duplicate inquiry check preventing duplicate submissions within 24 hours.
+  - Added 1-click WhatsApp fast-track deep link (`wa.me`) on submission confirmation.
+  - Wired all landing page conversion CTAs (navbar, hero, mockup preview bar, bottom CTA, and footer) to trigger the interactive demo modal.
+- **On-Hostname Navigation & Localhost Fix (`RmsDisabledPage.tsx`)**:
+  - Eliminated hardcoded `http://localhost:3000/dashboard` external redirect.
+  - Retained 100% on-hostname routing within `zmanage.zorviktech.com` using internal React Router navigation (`navigate('/')` and `navigate('/login')`).
+- **API URL Protocol Normalization (`urls.ts`, `api.ts`, `AuthPage.tsx`)**:
+  - Added `normalizeApiUrl` ensuring missing `https://` schemes in production environment variables (e.g. `api.zmanage.zorviktech.com`) are automatically formatted as `https://api.zmanage.zorviktech.com/api/v1`.
+  - Fixed client login 404 error caused by relative pathing (`https://zmanage.zorviktech.com/api.zmanage.zorviktech.com/auth/login`).
+  - Added centralized resolver `getZorvikCentralAuthUrl()` defaulting to `https://www.zorviktech.com/api/v1/auth/login` on production and `http://localhost:3000/api/v1/auth/login` on local dev.
+
 ## [0.9.0] - 2026-09-15
 ### Role-Based Access Control (RBAC) & Granular Tab Permissions Management
 - **Role Tier Presets & Tab Configuration (`CrewView.tsx`)**:

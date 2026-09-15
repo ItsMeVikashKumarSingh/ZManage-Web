@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, ShieldCheck, Sparkles, Loader2 } from 'lucide-react';
+import { getZorvikCentralAuthUrl } from '../lib/urls';
+import { API_BASE_URL } from '../lib/api';
 
 interface AuthPageProps {
   onSuccessLogin: (sessionData: { tenantId: string; clientName: string; token: string }) => void;
@@ -20,8 +22,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccessLogin, onBackToHome
     try {
       // Primary: Central Zorvik-Tech Client Login API
       // Fallback: Local API
-      const primaryUrl = import.meta.env.VITE_ZORVIK_AUTH_URL || 'http://localhost:3000/api/v1/auth/login';
-      const fallbackUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:4003/api/v1'}/auth/login`;
+      const primaryUrl = getZorvikCentralAuthUrl();
+      const fallbackUrl = `${API_BASE_URL}/auth/login`;
 
       let res: Response;
       try {

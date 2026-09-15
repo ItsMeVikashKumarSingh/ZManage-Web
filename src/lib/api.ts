@@ -1,7 +1,9 @@
 // Typesafe API Client for ZManage Operations
 // Connects ZManage-Web to ZManage-APIs (Port 4003)
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4003/api/v1';
+import { normalizeApiUrl } from './urls';
+
+export const API_BASE_URL = normalizeApiUrl(import.meta.env.VITE_API_URL, 4003, '/api/v1');
 
 export interface AssetRecord {
   id: string;

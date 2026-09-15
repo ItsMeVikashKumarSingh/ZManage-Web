@@ -15,23 +15,23 @@ import {
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { useNavigate } from 'react-router-dom';
+import { ScheduleDemoModal } from './ScheduleDemoModal';
 
 interface LandingPageProps {
   hasActiveSession?: boolean;
   onGoToDashboard?: () => void;
   onNavigateLogin: () => void;
-  onEnterDemo: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   hasActiveSession,
   onGoToDashboard,
-  onNavigateLogin,
-  onEnterDemo
+  onNavigateLogin
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'vault' | 'calendar' | 'crew' | 'payouts'>('vault');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState<boolean>(false);
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -84,8 +84,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   Sign In
                 </button>
                 <button
-                  onClick={onEnterDemo}
-                  className="bg-charcoal text-white dark:bg-white dark:text-charcoal hover:opacity-90 rounded-full text-xs font-semibold px-5 py-2.5 shadow-sm transition flex items-center gap-1.5"
+                  onClick={() => setIsDemoModalOpen(true)}
+                  className="bg-charcoal text-white dark:bg-white dark:text-charcoal hover:opacity-90 rounded-full text-xs font-semibold px-5 py-2.5 shadow-sm transition flex items-center gap-1.5 cursor-pointer"
                 >
                   Schedule a Demo
                 </button>
@@ -111,10 +111,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <button
-            onClick={onEnterDemo}
-            className="btn-tally-primary text-sm px-6 py-3 w-full sm:w-auto font-sans"
+            onClick={() => setIsDemoModalOpen(true)}
+            className="btn-tally-primary text-sm px-6 py-3 w-full sm:w-auto font-sans cursor-pointer flex items-center justify-center gap-2"
           >
-            Launch Interactive Console <ArrowRight className="w-4 h-4" />
+            Schedule a Demo <ArrowRight className="w-4 h-4" />
           </button>
           <button
             onClick={onNavigateLogin}
@@ -208,10 +208,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 Active Tenant: Zorvik Creative Studios · Real-time inventory sync & settlement
               </span>
               <button
-                onClick={onEnterDemo}
-                className="font-mono text-xs text-charcoal hover:text-amber-600 font-semibold flex items-center gap-1"
+                onClick={() => setIsDemoModalOpen(true)}
+                className="font-mono text-xs text-charcoal hover:text-amber-600 font-semibold flex items-center gap-1 cursor-pointer"
               >
-                Open Studio Demo <ArrowRight className="w-3 h-3" />
+                Schedule Studio Demo <ArrowRight className="w-3 h-3" />
               </button>
             </div>
           </div>
@@ -647,10 +647,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <button
-              onClick={onEnterDemo}
-              className="btn-tally-primary text-sm px-8 py-3 w-full sm:w-auto font-sans"
+              onClick={() => setIsDemoModalOpen(true)}
+              className="btn-tally-primary text-sm px-8 py-3 w-full sm:w-auto font-sans cursor-pointer flex items-center justify-center gap-2"
             >
-              Launch Live Studio Console <ArrowRight className="w-4 h-4" />
+              Schedule a Live Demo <ArrowRight className="w-4 h-4" />
             </button>
             <button
               onClick={onNavigateLogin}
@@ -693,7 +693,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <li><a href="#collision" className="hover:text-charcoal dark:hover:text-white transition">Operations Calendar</a></li>
                 <li><a href="#vault" className="hover:text-charcoal dark:hover:text-white transition">Workforce & Team</a></li>
                 <li><a href="#vault" className="hover:text-charcoal dark:hover:text-white transition">Worker Payouts</a></li>
-                <li><button onClick={onEnterDemo} className="hover:text-tally transition text-left">Interactive Demo</button></li>
+                <li><button onClick={() => setIsDemoModalOpen(true)} className="hover:text-tally transition text-left cursor-pointer">Schedule a Demo</button></li>
               </ul>
             </div>
 
@@ -744,6 +744,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
       </footer>
+
+      {/* Schedule a Demo Interactive Modal */}
+      <ScheduleDemoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
     </div>
   );
 };

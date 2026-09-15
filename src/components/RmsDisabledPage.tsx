@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShieldAlert, ArrowLeft, ArrowRight, Layers } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { ProjectRecord } from '../lib/api';
 
 interface RmsDisabledPageProps {
@@ -17,8 +18,10 @@ export const RmsDisabledPage: React.FC<RmsDisabledPageProps> = ({
   onSwitchProject,
   onLogout
 }) => {
-  const handleReturnToClientPortal = () => {
-    window.location.href = 'http://localhost:3000/dashboard';
+  const navigate = useNavigate();
+
+  const handleReturnHome = () => {
+    navigate('/');
   };
 
   return (
@@ -51,7 +54,7 @@ export const RmsDisabledPage: React.FC<RmsDisabledPageProps> = ({
             )}
           </p>
           <p className="text-[11px] text-fog">
-            Please contact Zorvik Tech to enable Resource Management System (RMS) for this project.
+            Please contact Zorvik Tech or your account administrator to enable Resource Management System (RMS) for this workspace.
           </p>
         </div>
 
@@ -74,7 +77,7 @@ export const RmsDisabledPage: React.FC<RmsDisabledPageProps> = ({
                   </div>
                   <button
                     type="button"
-                    className="text-[10px] font-semibold text-electric flex items-center gap-1 group-hover:translate-x-0.5 transition-transform"
+                    className="text-[10px] font-semibold text-electric flex items-center gap-1 group-hover:translate-x-0.5 transition-transform cursor-pointer"
                   >
                     Switch <ArrowRight className="w-3 h-3" />
                   </button>
@@ -87,25 +90,25 @@ export const RmsDisabledPage: React.FC<RmsDisabledPageProps> = ({
         {/* Action Controls */}
         <div className="pt-2 space-y-2.5">
           <button
-            onClick={handleReturnToClientPortal}
-            className="dub-btn-primary w-full text-xs py-2.5 flex items-center justify-center gap-2"
+            onClick={handleReturnHome}
+            className="dub-btn-primary w-full text-xs py-2.5 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4" /> Return to Client Dashboard
+            <ArrowLeft className="w-4 h-4" /> Return to Home
           </button>
 
           {onLogout && (
             <button
               onClick={onLogout}
-              className="dub-btn-outline w-full text-xs py-2 text-steel hover:text-charcoal"
+              className="dub-btn-outline w-full text-xs py-2 text-steel hover:text-charcoal cursor-pointer"
             >
-              Sign Out
+              Sign Out / Switch Account
             </button>
           )}
         </div>
 
         {/* Footer Note */}
-        <div className="pt-2 border-t border-ash flex items-center justify-center gap-1.5 text-[11px] text-fog">
-          <span>Powered by Zorvik Tech</span>
+        <div className="pt-2 border-t border-ash flex items-center justify-center gap-1.5 text-[11px] text-fog font-mono">
+          <span>Zorvik Tech · ZManage Production</span>
         </div>
       </div>
     </div>

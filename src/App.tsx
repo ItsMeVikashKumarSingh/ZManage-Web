@@ -20,8 +20,7 @@ export interface SessionData {
 
 const LandingRoute: React.FC<{
   session: SessionData | null;
-  onEnterDemo: () => void;
-}> = ({ session, onEnterDemo }) => {
+}> = ({ session }) => {
   const navigate = useNavigate();
 
   return (
@@ -29,10 +28,6 @@ const LandingRoute: React.FC<{
       hasActiveSession={Boolean(session?.token)}
       onGoToDashboard={() => navigate('/dashboard')}
       onNavigateLogin={() => navigate('/login')}
-      onEnterDemo={() => {
-        onEnterDemo();
-        navigate('/dashboard');
-      }}
     />
   );
 };
@@ -156,26 +151,6 @@ export const App: React.FC = () => {
     setSession(null);
   };
 
-  const handleEnterDemo = () => {
-    const demoTenantId = import.meta.env.VITE_DEMO_TENANT_ID || '';
-    const demoSession: SessionData = {
-      tenantId: demoTenantId,
-      projectId: demoTenantId || undefined,
-      projectName: 'Zorvik Studio Demo',
-      clientName: 'Zorvik Studio Operations',
-      token: 'zm_demo_token_3e8634a41f761feec1245927a396acd9bd3fac',
-      roleTier: 'admin',
-      allowedTabs: [
-        'ai', 'analytics', 'bookings', 'schedule',
-        'inventory', 'kits', 'consumables', 'vaults',
-        'crew', 'payouts', 'logs'
-      ]
-    };
-    localStorage.setItem('zmanage_session', JSON.stringify(demoSession));
-    localStorage.setItem('zresource_session', JSON.stringify(demoSession));
-    setSession(demoSession);
-  };
-
   const handleSwitchProject = (p: ProjectRecord) => {
     setSession(prev => {
       if (!prev) return null;
@@ -196,7 +171,7 @@ export const App: React.FC = () => {
       <Routes>
         <Route
           path="/"
-          element={<LandingRoute session={session} onEnterDemo={handleEnterDemo} />}
+          element={<LandingRoute session={session} />}
         />
         <Route
           path="/login"
