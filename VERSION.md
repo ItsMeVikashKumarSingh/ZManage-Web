@@ -1,5 +1,23 @@
 # ZManage-Web Changelog
 
+## [0.8.2] - 2026-09-15
+### Rule 8.4 Iconography Compliance, Vite Code-Splitting & Dead Code Elimination
+- **Rule 8.4 Iconography & Emoji Sanitization (`StudioAiCopilotModal.tsx`, `ScheduleView.tsx`, `BookingsView.tsx`, `LandingPage.tsx`)**:
+  - Removed emojis from AI Copilot greeting (`👋`) and error handling toast (`⚠️`).
+  - Replaced raw text unicode `✓` checkmarks in `LandingPage.tsx` with Lucide `<Check />` icons.
+  - Replaced raw text `✕` characters in `BookingsView.tsx` and `ScheduleView.tsx` with Lucide `<X />` icons.
+  - Replaced timeline event emoji `📋` in `ScheduleView.tsx` with Lucide `<Ticket />` icon.
+- **Frontend Performance & Bundle Optimization (`DashboardLayout.tsx`)**:
+  - Converted all 8 major dashboard views (`InventoryView`, `ScheduleView`, `CrewView`, `PayoutsView`, `AnalyticsView`, `BookingsView`, `LogsView`, `ZorvikAiView`) to asynchronous `React.lazy()` dynamic imports wrapped in a `Suspense` boundary.
+  - Resolved Vite production chunk warning by distributing heavy view bundles into on-demand asynchronous chunks.
+- **Dead Code & Legacy Prototype Elimination**:
+  - Safely removed orphaned prototype components: `AssetVault.tsx`, `CrewRoster.tsx`, `WorkerPayouts.tsx`, `OperationsCalendar.tsx`, and unrouted `views/SettingsView.tsx`.
+- **Elimination of Hardcoded Fallback IDs (`api.ts`, `App.tsx`, `AuthPage.tsx`, `.env`)**:
+  - Removed static fallback tenant ID from `api.ts`; API headers now dynamically read the active session without phantom headers.
+  - Converted demo workspace tenant resolution in `App.tsx` and `AuthPage.tsx` to read from `VITE_DEMO_TENANT_ID` environment variable.
+- **Version Harmonization (`package.json`)**:
+  - Synchronized package version to `0.8.2`.
+
 ## [0.8.1] - 2026-09-13
 ### Zorvik AI Multimodal PDF Query Prompting & Active Tenant Realignment
 - **Multimodal Document Inspection (`ZorvikAiView.tsx`)**:

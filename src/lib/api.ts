@@ -295,7 +295,7 @@ export interface AnalyticsOverview {
 class ApiClient {
   private getHeaders(): HeadersInit {
     const sessionStr = localStorage.getItem('zmanage_session') || localStorage.getItem('zresource_session');
-    let tenantId = '26d6ac0b-964c-42d8-aa9a-84adb7698d4b';
+    let tenantId = '';
     let token = '';
 
     if (sessionStr) {
@@ -305,15 +305,18 @@ class ApiClient {
         if (session.projectId) tenantId = session.projectId;
         else if (session.tenantId) tenantId = session.tenantId;
         if (session.token) token = session.token;
-      } catch (e) {
+      } catch {
         // use defaults
       }
     }
 
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId
+      'Content-Type': 'application/json'
     };
+
+    if (tenantId) {
+      headers['X-Tenant-ID'] = tenantId;
+    }
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;

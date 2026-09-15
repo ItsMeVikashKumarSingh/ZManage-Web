@@ -153,9 +153,10 @@ export const App: React.FC = () => {
   };
 
   const handleEnterDemo = () => {
+    const demoTenantId = import.meta.env.VITE_DEMO_TENANT_ID || '';
     const demoSession: SessionData = {
-      tenantId: '26d6ac0b-964c-42d8-aa9a-84adb7698d4b',
-      projectId: '26d6ac0b-964c-42d8-aa9a-84adb7698d4b',
+      tenantId: demoTenantId,
+      projectId: demoTenantId || undefined,
       projectName: 'Zorvik Studio Demo',
       clientName: 'Zorvik Studio Operations',
       token: 'zm_demo_token_3e8634a41f761feec1245927a396acd9bd3fac'

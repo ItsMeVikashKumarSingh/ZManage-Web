@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   BarChart3, Package, Calendar, Users, DollarSign, 
@@ -6,14 +6,14 @@ import {
   ExternalLink, ShieldCheck, Check, FolderKanban, Ticket,
   Layers, Boxes, Building2, Sparkles
 } from 'lucide-react';
-import { InventoryView } from './views/InventoryView';
-import { ScheduleView } from './views/ScheduleView';
-import { CrewView } from './views/CrewView';
-import { PayoutsView } from './views/PayoutsView';
-import { AnalyticsView } from './views/AnalyticsView';
-import { BookingsView } from './views/BookingsView';
-import { LogsView } from './views/LogsView';
-import { ZorvikAiView } from './views/ZorvikAiView';
+const InventoryView = lazy(() => import('./views/InventoryView').then(m => ({ default: m.InventoryView })));
+const ScheduleView = lazy(() => import('./views/ScheduleView').then(m => ({ default: m.ScheduleView })));
+const CrewView = lazy(() => import('./views/CrewView').then(m => ({ default: m.CrewView })));
+const PayoutsView = lazy(() => import('./views/PayoutsView').then(m => ({ default: m.PayoutsView })));
+const AnalyticsView = lazy(() => import('./views/AnalyticsView').then(m => ({ default: m.AnalyticsView })));
+const BookingsView = lazy(() => import('./views/BookingsView').then(m => ({ default: m.BookingsView })));
+const LogsView = lazy(() => import('./views/LogsView').then(m => ({ default: m.LogsView })));
+const ZorvikAiView = lazy(() => import('./views/ZorvikAiView').then(m => ({ default: m.ZorvikAiView })));
 import { RmsDisabledPage } from './RmsDisabledPage';
 import { ThemeToggle } from './ThemeToggle';
 import { StudioAiCopilotModal } from './StudioAiCopilotModal';
@@ -413,38 +413,49 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
         {/* View Surface */}
         <main className="flex-1 p-6 md:p-8 max-w-6xl w-full mx-auto">
-          {activeTab === 'ai' && (
-            <ZorvikAiView projectName={currentProjectName} />
-          )}
-          {activeTab === 'analytics' && (
-            <AnalyticsView 
-              projectName={currentProjectName}
-              onNavigateTab={tab => handleTabChange(tab)} 
-            />
-          )}
-          {activeTab === 'bookings' && <BookingsView />}
-          {(activeTab === 'inventory' || activeTab === 'kits' || activeTab === 'consumables' || activeTab === 'vaults') && (
-            <InventoryView 
-              initialSubTab={
-                activeTab === 'kits' ? 'kits' :
-                activeTab === 'consumables' ? 'consumables' :
-                activeTab === 'vaults' ? 'vaults' : 'assets'
-              }
-              onSubTabChange={(sub) => {
-                const map: Record<string, string> = {
-                  assets: 'inventory',
-                  kits: 'kits',
-                  consumables: 'consumables',
-                  vaults: 'vaults'
-                };
-                handleTabChange(map[sub] || 'inventory');
-              }}
-            />
-          )}
-          {activeTab === 'schedule' && <ScheduleView />}
-          {activeTab === 'crew' && <CrewView />}
-          {activeTab === 'payouts' && <PayoutsView />}
-          {activeTab === 'logs' && <LogsView />}
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-20">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-charcoal dark:bg-zinc-800 animate-pulse flex items-center justify-center text-white font-bold text-xs">
+                  Z
+                </div>
+                <span className="text-xs text-steel dark:text-zinc-400 font-mono">Loading operations module...</span>
+              </div>
+            </div>
+          }>
+            {activeTab === 'ai' && (
+              <ZorvikAiView projectName={currentProjectName} />
+            )}
+            {activeTab === 'analytics' && (
+              <AnalyticsView 
+                projectName={currentProjectName}
+                onNavigateTab={tab => handleTabChange(tab)} 
+              />
+            )}
+            {activeTab === 'bookings' && <BookingsView />}
+            {(activeTab === 'inventory' || activeTab === 'kits' || activeTab === 'consumables' || activeTab === 'vaults') && (
+              <InventoryView 
+                initialSubTab={
+                  activeTab === 'kits' ? 'kits' :
+                  activeTab === 'consumables' ? 'consumables' :
+                  activeTab === 'vaults' ? 'vaults' : 'assets'
+                }
+                onSubTabChange={(sub) => {
+                  const map: Record<string, string> = {
+                    assets: 'inventory',
+                    kits: 'kits',
+                    consumables: 'consumables',
+                    vaults: 'vaults'
+                  };
+                  handleTabChange(map[sub] || 'inventory');
+                }}
+              />
+            )}
+            {activeTab === 'schedule' && <ScheduleView />}
+            {activeTab === 'crew' && <CrewView />}
+            {activeTab === 'payouts' && <PayoutsView />}
+            {activeTab === 'logs' && <LogsView />}
+          </Suspense>
         </main>
       </div>
 

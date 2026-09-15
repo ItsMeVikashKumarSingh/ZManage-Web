@@ -10,7 +10,8 @@ import {
   Cpu,
   Clock,
   Sparkles,
-  QrCode
+  QrCode,
+  Check
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { useNavigate } from 'react-router-dom';
@@ -125,11 +126,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         {/* Telemetry Microtext */}
         <div className="text-[11px] font-mono text-fog flex items-center justify-center gap-4">
-          <span>✓ Zero setup required</span>
+          <span className="inline-flex items-center gap-1"><Check className="w-3.5 h-3.5 text-vividGreen" /> Zero setup required</span>
           <span>·</span>
-          <span>✓ Instant demo workspace</span>
+          <span className="inline-flex items-center gap-1"><Check className="w-3.5 h-3.5 text-vividGreen" /> Instant demo workspace</span>
           <span>·</span>
-          <span>✓ 100% Studio Data Sovereignty</span>
+          <span className="inline-flex items-center gap-1"><Check className="w-3.5 h-3.5 text-vividGreen" /> 100% Studio Data Sovereignty</span>
         </div>
 
         {/* 4. Live Studio Operations Mockup Preview */}

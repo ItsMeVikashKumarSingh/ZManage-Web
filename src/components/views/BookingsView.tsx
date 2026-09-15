@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Ticket, Search, DownloadCloud, Calendar, Clock, MapPin, 
   Phone, Mail, Plus, Loader2, CheckCircle2, 
-  Sparkles, Camera, Users, ArrowRight, Download
+  Sparkles, Camera, Users, ArrowRight, Download, X
 } from 'lucide-react';
 import { api, BookingCandidate, AssetRecord, WorkerRecord, AllocationRecord } from '../../lib/api';
 import { exportToCsv } from '../../lib/exportUtils';
@@ -534,9 +534,9 @@ export const BookingsView: React.FC = () => {
 
               <button
                 onClick={() => setSchedulingBooking(null)}
-                className="text-steel dark:text-zinc-400 hover:text-charcoal dark:hover:text-zinc-100 text-xs cursor-pointer"
+                className="text-steel dark:text-zinc-400 hover:text-charcoal dark:hover:text-zinc-100 text-xs cursor-pointer p-1 rounded-lg hover:bg-paper dark:hover:bg-zinc-800 transition"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -743,9 +743,9 @@ export const BookingsView: React.FC = () => {
 
               <button
                 onClick={() => setShowOfflineModal(false)}
-                className="text-steel dark:text-zinc-400 hover:text-charcoal dark:hover:text-zinc-100 text-xs cursor-pointer"
+                className="text-steel dark:text-zinc-400 hover:text-charcoal dark:hover:text-zinc-100 text-xs cursor-pointer p-1 rounded-lg hover:bg-paper dark:hover:bg-zinc-800 transition"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

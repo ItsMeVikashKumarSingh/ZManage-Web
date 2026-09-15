@@ -4,7 +4,7 @@ import {
   Calendar as CalendarIcon, Clock, Sparkles, Phone,
   MessageCircle, Trash2, AlertTriangle, Search, ChevronLeft, 
   ChevronRight, Layers, LayoutGrid, CheckCircle2, ShieldAlert, Download, DownloadCloud,
-  Scan
+  Scan, Ticket, X
 } from 'lucide-react';
 import { api, AllocationRecord, AssetRecord, WorkerRecord, BookingCandidate, AIRecommendation } from '../../lib/api';
 import { exportToCsv } from '../../lib/exportUtils';
@@ -1050,8 +1050,9 @@ export const ScheduleView: React.FC = () => {
                               }`}
                               title={isBooking ? "Studio Booking awaiting gear & crew - Click to allocate" : "Click to view digital call sheet"}
                             >
-                              <span className="truncate font-semibold text-[11px]">
-                                {isBooking ? `📋 ${evt.normalizedTitle}` : evt.normalizedTitle}
+                              <span className="truncate font-semibold text-[11px] flex items-center">
+                                {isBooking && <Ticket className="w-3 h-3 inline mr-1 text-purple-500 shrink-0" />}
+                                <span className="truncate">{evt.normalizedTitle}</span>
                               </span>
                               <span className="text-[10px] font-mono opacity-80 shrink-0 ml-1">
                                 {isBooking ? '+ Allocate Gear & Crew' : evt.normalizedVenue}
@@ -1474,9 +1475,9 @@ export const ScheduleView: React.FC = () => {
               </h2>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-steel dark:text-zinc-400 hover:text-charcoal dark:hover:text-zinc-100 text-xs"
+                className="text-steel dark:text-zinc-400 hover:text-charcoal dark:hover:text-zinc-100 text-xs p-1 rounded-lg hover:bg-paper dark:hover:bg-zinc-800 transition"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

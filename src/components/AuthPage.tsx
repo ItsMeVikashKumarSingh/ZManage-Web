@@ -63,7 +63,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccessLogin, onBackToHome
 
   const handleQuickDemo = () => {
     const session = {
-      tenantId: '26d6ac0b-964c-42d8-aa9a-84adb7698d4b',
+      tenantId: import.meta.env.VITE_DEMO_TENANT_ID || '',
       clientName: 'Zorvik Studio Operations',
       token: 'zm_demo_token_3e8634a41f761feec1245927a396acd9bd3fac'
     };

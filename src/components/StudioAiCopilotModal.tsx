@@ -63,7 +63,7 @@ export const StudioAiCopilotModal: React.FC<StudioAiCopilotModalProps> = ({
     {
       id: 'welcome',
       role: 'assistant',
-      text: `👋 Hello! I am **Zorvik AI**.\n\nI have complete real-time visibility into **${projectName}**. You can ask me anything about upcoming shoots, equipment status, technician rates, or financial compensation.`,
+      text: `Hello! I am **Zorvik AI**.\n\nI have complete real-time visibility into **${projectName}**. You can ask me anything about upcoming shoots, equipment status, technician rates, or financial compensation.`,
       time: 'Just now'
     }
   ]);
@@ -120,7 +120,7 @@ export const StudioAiCopilotModal: React.FC<StudioAiCopilotModalProps> = ({
       const errorMessage: Message = {
         id: String(Date.now() + 1),
         role: 'assistant',
-        text: `⚠️ Error communicating with Zorvik-AI: ${err.message || 'Please check your connection and try again.'}`,
+        text: `Error communicating with Zorvik-AI: ${err.message || 'Please check your connection and try again.'}`,
         time: 'Just now'
       };
       setMessages((prev) => [...prev, errorMessage]);
