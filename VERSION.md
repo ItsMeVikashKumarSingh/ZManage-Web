@@ -1,5 +1,23 @@
 # ZManage-Web Changelog
 
+## [0.9.0] - 2026-09-15
+### Role-Based Access Control (RBAC) & Granular Tab Permissions Management
+- **Role Tier Presets & Tab Configuration (`CrewView.tsx`)**:
+  - Implemented comprehensive Team Access Management with 1-click role presets: `Admin`, `Studio Manager`, `Logistics Lead`, `Finance & Accounts`, `Field Crew / Specialist`, and `Custom`.
+  - Added dedicated "Access Tier" badge column in the workforce roster table with direct click-to-configure action.
+  - Added "Configure Tab Access" in row action menu.
+  - Built Glassmorphism 2.0 Tab Permissions Modal allowing studio owners and managers to toggle access for any of the 11 operational modules (`ai`, `analytics`, `bookings`, `schedule`, `inventory`, `kits`, `consumables`, `vaults`, `crew`, `payouts`, `logs`).
+  - Added "Access Tier" and "Allowed Tabs" to CSV export.
+- **Dynamic Navigation & Client-Side Route Guards (`DashboardLayout.tsx`)**:
+  - Integrated `roleTier` and `allowedTabs` props throughout the dashboard layout.
+  - Filtered sidebar navigation groups dynamically to show only modules authorized for the active user role.
+  - Added active role tier badge in top header.
+  - Added unauthorized route guard: users attempting to view unauthorized tabs see a cyber-styled Access Restricted screen with a quick return button to their default allowed tab.
+  - Automatic fallback redirection if URL specifies an unauthorized or default tab.
+- **API Integration & State Flow (`api.ts`, `App.tsx`)**:
+  - Connected `updateWorkerPermissions(workerId, payload)` to `PATCH /workers/:id/permissions` endpoint on `ZManage-APIs`.
+  - Stored and hydrated `roleTier` and `allowedTabs` from session data on login and access verification.
+
 ## [0.8.2] - 2026-09-15
 ### Rule 8.4 Iconography Compliance, Vite Code-Splitting & Dead Code Elimination
 - **Rule 8.4 Iconography & Emoji Sanitization (`StudioAiCopilotModal.tsx`, `ScheduleView.tsx`, `BookingsView.tsx`, `LandingPage.tsx`)**:

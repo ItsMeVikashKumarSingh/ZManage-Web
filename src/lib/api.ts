@@ -131,6 +131,8 @@ export interface VerifyAccessResult {
   rmsEnabled: boolean;
   projectId?: string;
   projectName?: string;
+  roleTier?: string;
+  allowedTabs?: string[];
   availableProjects?: ProjectRecord[];
   error?: string;
 }
@@ -144,6 +146,8 @@ export interface WorkerRecord {
   phone: string;
   email?: string | null;
   primary_role: string;
+  role_tier?: 'admin' | 'manager' | 'logistics' | 'finance' | 'crew' | 'custom' | string;
+  allowed_tabs?: string[];
   skills?: string[];
   worker_type: 'in_house' | 'freelance' | 'contractor';
   day_rate: number;
@@ -456,6 +460,13 @@ class ApiClient {
       body: JSON.stringify(updates)
     });
     return res.worker;
+  }
+
+  async updateWorkerPermissions(id: string, payload: { role_tier?: string; allowed_tabs: string[] }) {
+    return await this.request<{ success: boolean; message: string; worker: WorkerRecord }>(`/workers/${id}/permissions`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    });
   }
 
   async deleteWorker(id: string) {

@@ -14,6 +14,8 @@ export interface SessionData {
   projectName?: string;
   clientName: string;
   token: string;
+  roleTier?: string;
+  allowedTabs?: string[];
 }
 
 const LandingRoute: React.FC<{
@@ -72,6 +74,8 @@ const DashboardRoute: React.FC<{
       clientName={session?.clientName || 'Aura Creative Studios'}
       projectName={session?.projectName}
       projectId={session?.projectId || session?.tenantId}
+      roleTier={session?.roleTier}
+      allowedTabs={session?.allowedTabs}
       onLogout={() => {
         onLogout();
         navigate('/login');
@@ -159,7 +163,13 @@ export const App: React.FC = () => {
       projectId: demoTenantId || undefined,
       projectName: 'Zorvik Studio Demo',
       clientName: 'Zorvik Studio Operations',
-      token: 'zm_demo_token_3e8634a41f761feec1245927a396acd9bd3fac'
+      token: 'zm_demo_token_3e8634a41f761feec1245927a396acd9bd3fac',
+      roleTier: 'admin',
+      allowedTabs: [
+        'ai', 'analytics', 'bookings', 'schedule',
+        'inventory', 'kits', 'consumables', 'vaults',
+        'crew', 'payouts', 'logs'
+      ]
     };
     localStorage.setItem('zmanage_session', JSON.stringify(demoSession));
     localStorage.setItem('zresource_session', JSON.stringify(demoSession));

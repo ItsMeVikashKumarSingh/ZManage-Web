@@ -3,8 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
   BarChart3, Package, Calendar, Users, DollarSign, 
   LogOut, ChevronDown, ChevronLeft, ChevronRight, Bell, Search, 
-  ExternalLink, ShieldCheck, Check, FolderKanban, Ticket,
-  Layers, Boxes, Building2, Sparkles
+  ExternalLink, ShieldCheck, ShieldAlert, Check, FolderKanban, Ticket,
+  Layers, Boxes, Building2, Sparkles, Shield
 } from 'lucide-react';
 const InventoryView = lazy(() => import('./views/InventoryView').then(m => ({ default: m.InventoryView })));
 const ScheduleView = lazy(() => import('./views/ScheduleView').then(m => ({ default: m.ScheduleView })));
@@ -23,6 +23,8 @@ interface DashboardLayoutProps {
   clientName: string;
   projectName?: string;
   projectId?: string;
+  roleTier?: string;
+  allowedTabs?: string[];
   onLogout: () => void;
   onSwitchProject?: (project: ProjectRecord) => void;
 }
@@ -31,6 +33,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   clientName, 
   projectName, 
   projectId,
+  roleTier,
+  allowedTabs,
   onLogout,
   onSwitchProject 
 }) => {
@@ -44,13 +48,28 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   ] as const;
   type TabType = typeof validTabs[number];
 
+  // Default fallback tab: first allowed tab if allowedTabs is provided, else 'analytics'
+  const defaultTab: TabType = (allowedTabs && allowedTabs.length > 0 && (validTabs as readonly string[]).includes(allowedTabs[0]))
+    ? (allowedTabs[0] as TabType)
+    : 'analytics';
+
   const activeTab: TabType = (tab && (validTabs as readonly string[]).includes(tab))
     ? (tab as TabType)
-    : 'analytics';
+    : defaultTab;
+
+  const isTabAuthorized = !allowedTabs || allowedTabs.length === 0 || allowedTabs.includes(activeTab);
 
   const handleTabChange = (nextTab: string) => {
     navigate(`/dashboard/${nextTab}`);
   };
+
+  useEffect(() => {
+    if (allowedTabs && allowedTabs.length > 0) {
+      if (!tab || !allowedTabs.includes(tab)) {
+        navigate(`/dashboard/${defaultTab}`, { replace: true });
+      }
+    }
+  }, [allowedTabs, tab, defaultTab, navigate]);
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem('zmanage_sidebar_collapsed') === 'true';
   });
@@ -126,7 +145,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     }
   };
 
-  const navSections = [
+  const allNavSections = [
     {
       group: 'Intelligence',
       items: [
@@ -164,6 +183,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       ]
     }
   ];
+
+  const navSections = allNavSections.map(section => ({
+    ...section,
+    items: section.items.filter(item => !allowedTabs || allowedTabs.length === 0 || allowedTabs.includes(item.id))
+  })).filter(section => section.items.length > 0);
 
   const navItems = navSections.flatMap(s => s.items);
 
@@ -391,6 +415,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
             <ThemeToggle variant="compact" />
 
+            {roleTier && (
+              <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full border border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-mono uppercase font-semibold">
+                <Shield className="w-3 h-3 text-purple-500" />
+                <span>{roleTier}</span>
+              </div>
+            )}
+
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-ash dark:border-zinc-800 bg-paper dark:bg-zinc-900 text-[11px] font-mono text-steel dark:text-zinc-300">
               <span className="w-1.5 h-1.5 rounded-full bg-vividGreen" />
               Live Operations
@@ -413,49 +444,71 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
         {/* View Surface */}
         <main className="flex-1 p-6 md:p-8 max-w-6xl w-full mx-auto">
-          <Suspense fallback={
-            <div className="flex items-center justify-center py-20">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-charcoal dark:bg-zinc-800 animate-pulse flex items-center justify-center text-white font-bold text-xs">
-                  Z
-                </div>
-                <span className="text-xs text-steel dark:text-zinc-400 font-mono">Loading operations module...</span>
+          {!isTabAuthorized ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center max-w-md mx-auto">
+              <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 mb-4">
+                <ShieldAlert className="w-6 h-6" />
               </div>
+              <h2 className="text-base font-semibold font-satoshi text-charcoal dark:text-zinc-100 mb-1">
+                Access Restricted
+              </h2>
+              <p className="text-xs text-steel dark:text-zinc-400 mb-6 leading-relaxed">
+                Your account role <span className="font-mono text-purple-600 dark:text-purple-400 font-semibold uppercase">({roleTier || 'Custom'})</span> does not have authorization to view the <span className="font-semibold text-charcoal dark:text-zinc-200 capitalize">{activeTab}</span> module.
+              </p>
+              {allowedTabs && allowedTabs.length > 0 && (
+                <button
+                  onClick={() => handleTabChange(defaultTab)}
+                  className="dub-btn-primary text-xs px-4 py-2 flex items-center gap-2 cursor-pointer"
+                >
+                  <span>Return to {navItems.find(i => i.id === defaultTab)?.label || defaultTab}</span>
+                </button>
+              )}
             </div>
-          }>
-            {activeTab === 'ai' && (
-              <ZorvikAiView projectName={currentProjectName} />
-            )}
-            {activeTab === 'analytics' && (
-              <AnalyticsView 
-                projectName={currentProjectName}
-                onNavigateTab={tab => handleTabChange(tab)} 
-              />
-            )}
-            {activeTab === 'bookings' && <BookingsView />}
-            {(activeTab === 'inventory' || activeTab === 'kits' || activeTab === 'consumables' || activeTab === 'vaults') && (
-              <InventoryView 
-                initialSubTab={
-                  activeTab === 'kits' ? 'kits' :
-                  activeTab === 'consumables' ? 'consumables' :
-                  activeTab === 'vaults' ? 'vaults' : 'assets'
-                }
-                onSubTabChange={(sub) => {
-                  const map: Record<string, string> = {
-                    assets: 'inventory',
-                    kits: 'kits',
-                    consumables: 'consumables',
-                    vaults: 'vaults'
-                  };
-                  handleTabChange(map[sub] || 'inventory');
-                }}
-              />
-            )}
-            {activeTab === 'schedule' && <ScheduleView />}
-            {activeTab === 'crew' && <CrewView />}
-            {activeTab === 'payouts' && <PayoutsView />}
-            {activeTab === 'logs' && <LogsView />}
-          </Suspense>
+          ) : (
+            <Suspense fallback={
+              <div className="flex items-center justify-center py-20">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-charcoal dark:bg-zinc-800 animate-pulse flex items-center justify-center text-white font-bold text-xs">
+                    Z
+                  </div>
+                  <span className="text-xs text-steel dark:text-zinc-400 font-mono">Loading operations module...</span>
+                </div>
+              </div>
+            }>
+              {activeTab === 'ai' && (
+                <ZorvikAiView projectName={currentProjectName} />
+              )}
+              {activeTab === 'analytics' && (
+                <AnalyticsView 
+                  projectName={currentProjectName}
+                  onNavigateTab={tab => handleTabChange(tab)} 
+                />
+              )}
+              {activeTab === 'bookings' && <BookingsView />}
+              {(activeTab === 'inventory' || activeTab === 'kits' || activeTab === 'consumables' || activeTab === 'vaults') && (
+                <InventoryView 
+                  initialSubTab={
+                    activeTab === 'kits' ? 'kits' :
+                    activeTab === 'consumables' ? 'consumables' :
+                    activeTab === 'vaults' ? 'vaults' : 'assets'
+                  }
+                  onSubTabChange={(sub) => {
+                    const map: Record<string, string> = {
+                      assets: 'inventory',
+                      kits: 'kits',
+                      consumables: 'consumables',
+                      vaults: 'vaults'
+                    };
+                    handleTabChange(map[sub] || 'inventory');
+                  }}
+                />
+              )}
+              {activeTab === 'schedule' && <ScheduleView />}
+              {activeTab === 'crew' && <CrewView />}
+              {activeTab === 'payouts' && <PayoutsView />}
+              {activeTab === 'logs' && <LogsView />}
+            </Suspense>
+          )}
         </main>
       </div>
 

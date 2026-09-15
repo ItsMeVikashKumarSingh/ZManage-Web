@@ -21,6 +21,59 @@ const STANDARD_ROLES = [
   'Other / Custom'
 ];
 
+interface TabPermissionConfig {
+  id: string;
+  label: string;
+  category: string;
+}
+
+const ALL_TABS: TabPermissionConfig[] = [
+  { id: 'ai', label: 'Zorvik AI Copilot', category: 'Intelligence' },
+  { id: 'analytics', label: 'Executive Analytics', category: 'Operations' },
+  { id: 'bookings', label: 'Client Bookings', category: 'Operations' },
+  { id: 'schedule', label: 'Operations Timeline', category: 'Operations' },
+  { id: 'inventory', label: 'Hardware Assets', category: 'Logistics' },
+  { id: 'kits', label: 'Equipment Kits & Bundles', category: 'Logistics' },
+  { id: 'consumables', label: 'Consumables Stock', category: 'Logistics' },
+  { id: 'vaults', label: 'Storage Vaults & Hubs', category: 'Logistics' },
+  { id: 'crew', label: 'Workforce & Team', category: 'Workforce' },
+  { id: 'payouts', label: 'Compensation Ledger', category: 'Finance' },
+  { id: 'logs', label: 'Security & Audit Logs', category: 'Security' }
+];
+
+const ROLE_PRESETS: Record<string, { name: string; description: string; tabs: string[] }> = {
+  admin: {
+    name: 'Admin',
+    description: 'Unrestricted access across all operational, financial, and security modules.',
+    tabs: ['ai', 'analytics', 'bookings', 'schedule', 'inventory', 'kits', 'consumables', 'vaults', 'crew', 'payouts', 'logs']
+  },
+  manager: {
+    name: 'Studio Manager',
+    description: 'Full studio operations, logistics, and crew management (excludes financial payouts and security logs).',
+    tabs: ['ai', 'analytics', 'bookings', 'schedule', 'inventory', 'kits', 'consumables', 'vaults', 'crew']
+  },
+  logistics: {
+    name: 'Logistics Lead',
+    description: 'Hardware, kits, consumables, vaults storage, and equipment scheduling.',
+    tabs: ['inventory', 'kits', 'consumables', 'vaults', 'schedule']
+  },
+  finance: {
+    name: 'Finance & Accounts',
+    description: 'Compensation ledger, team rates, and executive financial analytics.',
+    tabs: ['payouts', 'crew', 'analytics']
+  },
+  crew: {
+    name: 'Field Crew / Specialist',
+    description: 'Operations schedule timeline and Zorvik AI assistant.',
+    tabs: ['schedule', 'ai']
+  },
+  custom: {
+    name: 'Custom',
+    description: 'Hand-picked module permissions tailored for unique roles.',
+    tabs: []
+  }
+};
+
 export const CrewView: React.FC = () => {
   const [workers, setWorkers] = useState<WorkerRecord[]>([]);
   const [candidates, setCandidates] = useState<Array<ImportCandidate & { selected: boolean }>>([]);
@@ -28,6 +81,10 @@ export const CrewView: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState<boolean>(false);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [editingWorker, setEditingWorker] = useState<WorkerRecord | null>(null);
+  const [permissionWorker, setPermissionWorker] = useState<WorkerRecord | null>(null);
+  const [selectedRoleTier, setSelectedRoleTier] = useState<string>('crew');
+  const [selectedTabs, setSelectedTabs] = useState<string[]>([]);
+  const [isSavingPermissions, setIsSavingPermissions] = useState<boolean>(false);
   const [defaultDayRate, setDefaultDayRate] = useState<number>(4500);
   const [isImporting, setIsImporting] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -227,10 +284,67 @@ export const CrewView: React.FC = () => {
            (w.email || '').toLowerCase().includes(q);
   });
 
+  const handleOpenPermissions = (w: WorkerRecord) => {
+    setOpenMenuId(null);
+    setPermissionWorker(w);
+    const tier = w.role_tier || 'crew';
+    setSelectedRoleTier(tier);
+    if (w.allowed_tabs && w.allowed_tabs.length > 0) {
+      setSelectedTabs([...w.allowed_tabs]);
+    } else if (ROLE_PRESETS[tier]) {
+      setSelectedTabs([...ROLE_PRESETS[tier].tabs]);
+    } else {
+      setSelectedTabs([...ROLE_PRESETS.crew.tabs]);
+    }
+  };
+
+  const handleSelectPreset = (tier: string) => {
+    setSelectedRoleTier(tier);
+    if (tier !== 'custom' && ROLE_PRESETS[tier]) {
+      setSelectedTabs([...ROLE_PRESETS[tier].tabs]);
+    }
+  };
+
+  const handleToggleTab = (tabId: string) => {
+    let next: string[];
+    if (selectedTabs.includes(tabId)) {
+      next = selectedTabs.filter(t => t !== tabId);
+    } else {
+      next = [...selectedTabs, tabId];
+    }
+    setSelectedTabs(next);
+
+    if (selectedRoleTier !== 'custom') {
+      const preset = ROLE_PRESETS[selectedRoleTier]?.tabs || [];
+      if (preset.length !== next.length || !preset.every(t => next.includes(t))) {
+        setSelectedRoleTier('custom');
+      }
+    }
+  };
+
+  const handleSavePermissions = async () => {
+    if (!permissionWorker) return;
+    try {
+      setIsSavingPermissions(true);
+      await api.updateWorkerPermissions(permissionWorker.id, {
+        role_tier: selectedRoleTier,
+        allowed_tabs: selectedTabs
+      });
+      await loadWorkers();
+      setPermissionWorker(null);
+    } catch (err: any) {
+      alert(err.message || 'Failed to update member permissions');
+    } finally {
+      setIsSavingPermissions(false);
+    }
+  };
+
   const handleExportCrew = () => {
     exportToCsv('team_workforce_roster', filteredWorkers, [
       { header: 'Member Name', accessor: w => w.name },
       { header: 'Primary Role', accessor: w => w.primary_role },
+      { header: 'Access Tier', accessor: w => w.role_tier || 'crew' },
+      { header: 'Allowed Tabs', accessor: w => (w.allowed_tabs || []).join(';') },
       { header: 'Employment Type', accessor: w => w.worker_type },
       { header: 'Phone', accessor: w => w.phone || '' },
       { header: 'Email', accessor: w => w.email || '' },
@@ -319,6 +433,7 @@ export const CrewView: React.FC = () => {
                 <tr>
                   <th className="py-2.5 px-4">NAME & CONTACT</th>
                   <th className="py-2.5 px-4">ROLE</th>
+                  <th className="py-2.5 px-4">ACCESS TIER</th>
                   <th className="py-2.5 px-4">TYPE</th>
                   <th className="py-2.5 px-4">DAY RATE</th>
                   <th className="py-2.5 px-4">STATUS</th>
@@ -328,6 +443,7 @@ export const CrewView: React.FC = () => {
               <tbody className="divide-y divide-ash text-charcoal">
                 {filteredWorkers.map((w, index) => {
                   const isNearBottom = index >= filteredWorkers.length - 2 && filteredWorkers.length > 2;
+                  const tier = w.role_tier || 'crew';
                   return (
                     <tr key={w.id} className="hover:bg-paper/40 transition">
                       <td className="py-3 px-4">
@@ -340,6 +456,31 @@ export const CrewView: React.FC = () => {
                         <span className="dub-pill text-[10px] py-0.5 px-2 bg-paper text-steel uppercase font-mono">
                           {(w.primary_role || '').replace('_', ' ')}
                         </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenPermissions(w)}
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-ash dark:border-zinc-700 bg-paper/60 dark:bg-zinc-800/60 hover:bg-paper dark:hover:bg-zinc-800 hover:border-purple-500/50 transition cursor-pointer text-left"
+                          title="Click to configure tab permissions"
+                        >
+                          <Shield className={`w-3 h-3 shrink-0 ${
+                            tier === 'admin' ? 'text-purple-500' :
+                            tier === 'manager' ? 'text-blue-500' :
+                            tier === 'logistics' ? 'text-amber-500' :
+                            tier === 'finance' ? 'text-emerald-500' :
+                            tier === 'crew' ? 'text-cyan-500' :
+                            'text-zinc-400'
+                          }`} />
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-mono uppercase font-semibold text-charcoal dark:text-zinc-200 leading-tight">
+                              {tier}
+                            </span>
+                            <span className="text-[9px] text-fog dark:text-zinc-400 font-mono leading-tight">
+                              {(w.allowed_tabs && w.allowed_tabs.length > 0) ? `${w.allowed_tabs.length} tabs` : 'All tabs'}
+                            </span>
+                          </div>
+                        </button>
                       </td>
                       <td className="py-3 px-4 capitalize text-steel">
                         {(w.worker_type || '').replace('_', ' ')}
@@ -378,6 +519,15 @@ export const CrewView: React.FC = () => {
                                 isNearBottom ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
                               }`}
                             >
+                              <button
+                                type="button"
+                                onClick={() => handleOpenPermissions(w)}
+                                className="w-full px-2.5 py-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/30 text-xs font-medium text-purple-600 dark:text-purple-400 flex items-center gap-2 transition cursor-pointer"
+                              >
+                                <Shield className="w-3.5 h-3.5 shrink-0" />
+                                <span>Configure Tab Access</span>
+                              </button>
+
                               <button
                                 type="button"
                                 onClick={() => {
@@ -825,6 +975,161 @@ export const CrewView: React.FC = () => {
                 {isImporting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Import Selected ({candidates.filter(c => c.selected && !c.is_already_worker).length})
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab Permissions & Role Configuration Modal */}
+      {permissionWorker && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="dub-card shadow-floating p-6 bg-white dark:bg-[#0f0f14] border border-ash dark:border-zinc-800 w-full max-w-xl space-y-5 rounded-2xl max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-start justify-between pb-3 border-b border-ash dark:border-zinc-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold font-satoshi text-charcoal dark:text-zinc-100 flex items-center gap-2">
+                    <span>Manage Tab Permissions</span>
+                    <span className="font-mono text-xs text-purple-600 dark:text-purple-400 font-normal">({permissionWorker.name})</span>
+                  </h2>
+                  <p className="text-xs text-steel dark:text-zinc-400">
+                    Define operational role presets and authorize granular tab access across ZManage.
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setPermissionWorker(null)} 
+                className="text-fog hover:text-charcoal dark:text-zinc-400 dark:hover:text-zinc-200 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 overflow-y-auto flex-1 pr-1">
+              {/* Role Tier Selector (Presets) */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-steel dark:text-zinc-400 mb-2">
+                  Role Tier Presets
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {Object.entries(ROLE_PRESETS).map(([tierKey, preset]) => {
+                    const isSelected = selectedRoleTier === tierKey;
+                    return (
+                      <button
+                        key={tierKey}
+                        type="button"
+                        onClick={() => handleSelectPreset(tierKey)}
+                        className={`p-2.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? 'border-purple-500 bg-purple-500/10 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 shadow-xs'
+                            : 'border-ash dark:border-zinc-800 bg-paper/50 dark:bg-zinc-900/60 hover:bg-paper dark:hover:bg-zinc-800 text-charcoal dark:text-zinc-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full mb-1">
+                          <span className="text-xs font-semibold capitalize">{preset.name}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />}
+                        </div>
+                        <span className="text-[10px] text-fog dark:text-zinc-400 line-clamp-2 leading-tight">
+                          {preset.description}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Granular Tab Toggles */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-steel dark:text-zinc-400">
+                    Operational Modules Access ({selectedTabs.length} of {ALL_TABS.length} enabled)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTabs(ALL_TABS.map(t => t.id));
+                        setSelectedRoleTier('admin');
+                      }}
+                      className="text-[11px] text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
+                    >
+                      Select All
+                    </button>
+                    <span className="text-fog dark:text-zinc-600">|</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTabs([]);
+                        setSelectedRoleTier('custom');
+                      }}
+                      className="text-[11px] text-steel dark:text-zinc-400 hover:underline cursor-pointer"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border border-ash dark:border-zinc-800 rounded-xl p-2.5 bg-paper/30 dark:bg-zinc-900/40 max-h-56 overflow-y-auto">
+                  {ALL_TABS.map(tab => {
+                    const isChecked = selectedTabs.includes(tab.id);
+                    return (
+                      <div
+                        key={tab.id}
+                        onClick={() => handleToggleTab(tab.id)}
+                        className={`flex items-center justify-between p-2 rounded-lg border transition cursor-pointer ${
+                          isChecked
+                            ? 'border-purple-500/40 bg-purple-500/5 dark:bg-purple-950/20 text-charcoal dark:text-zinc-100'
+                            : 'border-ash/60 dark:border-zinc-800/60 bg-white/80 dark:bg-zinc-900/60 text-steel dark:text-zinc-400 hover:bg-paper dark:hover:bg-zinc-800'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {}}
+                            className="rounded border-ash dark:border-zinc-700 text-purple-600 focus:ring-0 cursor-pointer"
+                          />
+                          <div className="truncate">
+                            <div className="text-xs font-medium text-charcoal dark:text-zinc-200 truncate">{tab.label}</div>
+                            <div className="text-[10px] text-fog dark:text-zinc-500 font-mono">{tab.category}</div>
+                          </div>
+                        </div>
+                        {isChecked && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0 ml-2" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between pt-3 border-t border-ash dark:border-zinc-800">
+              <span className="text-[11px] text-fog dark:text-zinc-400 font-mono">
+                Audit event logged upon save.
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPermissionWorker(null)}
+                  className="dub-btn-outline text-xs px-3.5 py-1.5 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isSavingPermissions}
+                  onClick={handleSavePermissions}
+                  className="dub-btn-primary text-xs px-4 py-1.5 flex items-center gap-1.5 cursor-pointer"
+                >
+                  {isSavingPermissions && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save Permissions</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
