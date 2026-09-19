@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { api, AllocationRecord, AssetRecord, WorkerRecord, BookingCandidate, AIRecommendation } from '../../lib/api';
 import { exportToCsv } from '../../lib/exportUtils';
+import { useToast } from '../Toast';
+import { useConfirm } from '../ConfirmModal';
 import { QrScannerModal } from './inventory/QrScannerModal';
 
 type ViewMode = 'timeline' | 'calendar' | 'agenda';
@@ -31,6 +33,8 @@ const getLocalDateString = (d: Date = new Date()) => {
 };
 
 export const ScheduleView: React.FC = () => {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [allocations, setAllocations] = useState<AllocationRecord[]>([]);
   const [bookings, setBookings] = useState<BookingCandidate[]>([]);
   const [availableAssets, setAvailableAssets] = useState<AssetRecord[]>([]);
@@ -264,7 +268,7 @@ export const ScheduleView: React.FC = () => {
   // Zorvik-AI Kit & Crew Recommender Handler
   const handleGenerateAiRecommendation = async () => {
     if (!newShoot.shoot_title) {
-      alert('Please enter a shoot title first (e.g. Wedding Reception, Drone Pre-Wedding)');
+      toast.error('Please enter a shoot title first (e.g. Wedding Reception, Drone Pre-Wedding)');
       return;
     }
 
@@ -282,9 +286,10 @@ export const ScheduleView: React.FC = () => {
       if (res.success && res.recommendation) {
         setAiRecommendation(res.recommendation);
         setAiRecommendationModel(res.model || 'Zorvik-AI');
+        toast.success('AI recommendations generated');
       }
     } catch (err: any) {
-      alert(`AI Recommendation notice: ${err.message}`);
+      toast.info(`AI Recommendation notice: ${err.message}`);
     } finally {
       setIsAiGenerating(false);
     }
@@ -307,6 +312,7 @@ export const ScheduleView: React.FC = () => {
         notes: prev.notes ? `${prev.notes}${tipsText}` : (tipsText.trim() || prev.notes)
       };
     });
+    toast.success('AI recommendations applied to shoot draft');
   };
 
   // 1-Tap Sync all unallocated bookings to the database allocations table
@@ -318,7 +324,7 @@ export const ScheduleView: React.FC = () => {
       const unsynced = (res.candidates || []).filter(c => !c.is_already_synced);
 
       if (unsynced.length === 0) {
-        alert('All client bookings are already synchronized into operations allocations!');
+        toast.info('All client bookings are already synchronized into operations allocations!');
         return;
       }
 
@@ -336,9 +342,10 @@ export const ScheduleView: React.FC = () => {
       });
 
       await loadData();
-      alert(`Successfully synced ${unsynced.length} client booking(s) to Operations Timeline!`);
+      toast.success(`Successfully synced ${unsynced.length} client booking(s) to Operations Timeline!`);
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to sync bookings');
+      toast.error(err.message || 'Failed to sync bookings');
     } finally {
       setIsSyncing(false);
     }
@@ -429,7 +436,10 @@ export const ScheduleView: React.FC = () => {
 
   const handleCreateShoot = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newShoot.shoot_date) return alert('Please specify a shoot date');
+    if (!newShoot.shoot_date) {
+      toast.error('Please specify a shoot date');
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -459,6 +469,7 @@ export const ScheduleView: React.FC = () => {
 
       await loadData();
       setShowAddModal(false);
+      toast.success('Shoot allocation scheduled successfully');
       setNewShoot({
         shoot_title: '',
         shoot_venue: '',
@@ -472,22 +483,28 @@ export const ScheduleView: React.FC = () => {
         worker_ids: []
       });
     } catch (err: any) {
-      alert(`Double-Booking Conflict Guard: ${err.message}`);
+      toast.error(`Double-Booking Conflict Guard: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteAllocation = async (id: string) => {
-    if (!confirm('Are you sure you want to cancel this shoot allocation? Locked gear and assigned crew shifts will be released.')) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Cancel Allocation',
+      message: 'Are you sure you want to cancel this shoot allocation? Locked gear and assigned crew shifts will be released.',
+      confirmText: 'Cancel Allocation',
+      variant: 'danger'
+    });
+    if (!ok) return;
+
     try {
       setDeletingId(id);
       await api.deleteAllocation(id);
       await loadData();
+      toast.success('Shoot allocation cancelled and gear released');
     } catch (err: any) {
-      alert(err.message || 'Failed to cancel allocation');
+      toast.error(err.message || 'Failed to cancel allocation');
     } finally {
       setDeletingId(null);
     }
@@ -1767,7 +1784,7 @@ export const ScheduleView: React.FC = () => {
               };
             });
           } else {
-            alert(`Scanned: ${asset.name} (${asset.code || 'SKU'})\nStatus: ${asset.status.toUpperCase()}\nCondition: ${asset.condition?.toUpperCase()}`);
+            toast.info(`Scanned: ${asset.name} (${asset.code || 'SKU'}) | Status: ${asset.status.toUpperCase()} | Condition: ${asset.condition?.toUpperCase()}`, 'Asset Scanned');
           }
         }}
         title="Operations QR Scanner"

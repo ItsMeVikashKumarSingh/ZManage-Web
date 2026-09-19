@@ -6,6 +6,9 @@ import { DashboardLayout } from './components/DashboardLayout';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { TermsOfServicePage } from './components/TermsOfServicePage';
 import { SecurityPage } from './components/SecurityPage';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
+import { ToastProvider } from './components/Toast';
+import { ConfirmProvider } from './components/ConfirmModal';
 import { ProjectRecord } from './lib/api';
 
 export interface SessionData {
@@ -167,51 +170,56 @@ export const App: React.FC = () => {
   };
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/"
-          element={<LandingRoute session={session} />}
-        />
-        <Route
-          path="/login"
-          element={<LoginRoute session={session} onLoginSuccess={handleLoginSuccess} />}
-        />
-        <Route path="/auth" element={<Navigate to="/login" replace />} />
-        <Route
-          path="/dashboard"
-          element={
-            <DashboardRoute
-              session={session}
-              onLogout={handleLogout}
-              onSwitchProject={handleSwitchProject}
+    <ToastProvider>
+      <ConfirmProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route
+              path="/"
+              element={<LandingRoute session={session} />}
             />
-          }
-        />
-        <Route
-          path="/dashboard/:tab"
-          element={
-            <DashboardRoute
-              session={session}
-              onLogout={handleLogout}
-              onSwitchProject={handleSwitchProject}
+            <Route
+              path="/login"
+              element={<LoginRoute session={session} onLoginSuccess={handleLoginSuccess} />}
             />
-          }
-        />
-        <Route
-          path="/privacy"
-          element={<PrivacyRoute />}
-        />
-        <Route
-          path="/terms"
-          element={<TermsRoute />}
-        />
-        <Route
-          path="/security"
-          element={<SecurityRoute />}
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+            <Route path="/auth" element={<Navigate to="/login" replace />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <DashboardRoute
+                  session={session}
+                  onLogout={handleLogout}
+                  onSwitchProject={handleSwitchProject}
+                />
+              }
+            />
+            <Route
+              path="/dashboard/:tab"
+              element={
+                <DashboardRoute
+                  session={session}
+                  onLogout={handleLogout}
+                  onSwitchProject={handleSwitchProject}
+                />
+              }
+            />
+            <Route
+              path="/privacy"
+              element={<PrivacyRoute />}
+            />
+            <Route
+              path="/terms"
+              element={<TermsRoute />}
+            />
+            <Route
+              path="/security"
+              element={<SecurityRoute />}
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </ConfirmProvider>
+    </ToastProvider>
   );
 };

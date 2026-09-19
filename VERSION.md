@@ -1,5 +1,18 @@
 # ZManage-Web Changelog
 
+## [0.9.2] - 2026-09-19
+### Native Alert/Confirm Elimination, Custom Glassmorphism Toast/Modal, Password Eye Toggle & Reset Password Flow
+- **Elimination of Browser Native Dialogs (`alert`, `confirm`)**:
+  - Replaced all 29 native `window.alert()` calls and 3 native `window.confirm()` calls across the entire codebase with modern Cyber-Editorial Glassmorphism toast notifications (`useToast`) and async promise-based confirmation modals (`useConfirm`).
+  - Affected components modernized: `BookingsView.tsx`, `CrewView.tsx`, `InventoryView.tsx`, `PayoutsView.tsx`, `ScheduleView.tsx`, `ZorvikAiView.tsx`, and `exportUtils.ts`.
+- **Password Visibility Toggle (Eye Button) (`AuthPage.tsx`, `ResetPasswordPage.tsx`)**:
+  - Added interactive `<Eye />` / `<EyeOff />` toggles to obscured password fields on the studio sign-in page and password reset page.
+- **Forgot & Reset Password Architecture (`AuthPage.tsx`, `ResetPasswordPage.tsx`, `App.tsx`)**:
+  - Implemented inline "Forgot Password" view mode inside `AuthPage.tsx` with email recovery initiation routed to primary Central Auth API with automatic fallback to ZManage API.
+  - Built dedicated `ResetPasswordPage.tsx` (`/reset-password`) extracting recovery tokens from URL hash or query parameters with password validation and eye toggles.
+- **Demo Access Refinement (`AuthPage.tsx`)**:
+  - Removed remaining mock 1-click login button in `AuthPage.tsx` and replaced with "Schedule for Demo" action wired to `ScheduleDemoModal`.
+
 ## [0.9.1] - 2026-09-16
 ### One-Click Demo Removal, Schedule a Demo Modal & Localhost/URL Normalization
 - **Schedule a Demo Modal (`ScheduleDemoModal.tsx`, `LandingPage.tsx`, `App.tsx`)**:

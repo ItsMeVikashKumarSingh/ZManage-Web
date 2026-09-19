@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { api, WorkerRecord, ImportCandidate } from '../../lib/api';
 import { exportToCsv } from '../../lib/exportUtils';
+import { useToast } from '../Toast';
+import { useConfirm } from '../ConfirmModal';
 
 const STANDARD_ROLES = [
   'Lead Cinematographer',
@@ -75,6 +77,8 @@ const ROLE_PRESETS: Record<string, { name: string; description: string; tabs: st
 };
 
 export const CrewView: React.FC = () => {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [workers, setWorkers] = useState<WorkerRecord[]>([]);
   const [candidates, setCandidates] = useState<Array<ImportCandidate & { selected: boolean }>>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -183,8 +187,9 @@ export const CrewView: React.FC = () => {
       await loadWorkers();
       await loadCandidates();
       setShowImportModal(false);
+      toast.success('Team members imported successfully');
     } catch (err: any) {
-      alert(err.message || 'Import failed');
+      toast.error(err.message || 'Import failed');
     } finally {
       setIsImporting(false);
     }
@@ -215,6 +220,7 @@ export const CrewView: React.FC = () => {
       });
       await loadWorkers();
       setShowAddModal(false);
+      toast.success('Team member added to roster');
       setCustomRoleInput('');
       setNewWorker({
         name: '',
@@ -228,7 +234,7 @@ export const CrewView: React.FC = () => {
         ifsc: ''
       });
     } catch (err: any) {
-      alert(err.message || 'Failed to add team member');
+      toast.error(err.message || 'Failed to add team member');
     } finally {
       setIsSubmitting(false);
     }
@@ -256,21 +262,30 @@ export const CrewView: React.FC = () => {
       await loadWorkers();
       setEditingWorker(null);
       setEditingCustomRole('');
+      toast.success('Team member updated');
     } catch (err: any) {
-      alert(err.message || 'Failed to update member');
+      toast.error(err.message || 'Failed to update member');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteWorker = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this member from the team roster?')) return;
+    const ok = await confirm({
+      title: 'Remove Team Member',
+      message: 'Are you sure you want to remove this member from the team roster?',
+      confirmText: 'Remove Member',
+      variant: 'danger'
+    });
+    if (!ok) return;
+
     try {
       setDeletingId(id);
       await api.deleteWorker(id);
       await loadWorkers();
+      toast.success('Team member removed');
     } catch (err: any) {
-      alert(err.message || 'Failed to remove worker');
+      toast.error(err.message || 'Failed to remove worker');
     } finally {
       setDeletingId(null);
     }
@@ -332,8 +347,9 @@ export const CrewView: React.FC = () => {
       });
       await loadWorkers();
       setPermissionWorker(null);
+      toast.success('Permissions updated successfully');
     } catch (err: any) {
-      alert(err.message || 'Failed to update member permissions');
+      toast.error(err.message || 'Failed to update member permissions');
     } finally {
       setIsSavingPermissions(false);
     }

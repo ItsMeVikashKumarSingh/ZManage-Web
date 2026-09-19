@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { MarkdownRenderer } from '../MarkdownRenderer';
+import { useToast } from '../Toast';
 
 interface FileAttachment {
   name: string;
@@ -65,6 +66,7 @@ const CATEGORIZED_SUGGESTIONS = [
 ];
 
 export const ZorvikAiView: React.FC<ZorvikAiViewProps> = ({ projectName = 'Studio Operations' }) => {
+  const toast = useToast();
   const [isHistoryCollapsed, setIsHistoryCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem('zorvik_ai_history_collapsed') === 'true';
@@ -178,7 +180,7 @@ export const ZorvikAiView: React.FC<ZorvikAiViewProps> = ({ projectName = 'Studi
 
     Array.from(files).forEach(file => {
       if (file.size > 10 * 1024 * 1024) {
-        alert(`File ${file.name} exceeds 10MB limit.`);
+        toast.error(`File ${file.name} exceeds 10MB limit.`);
         return;
       }
 

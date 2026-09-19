@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { api, AssetRecord, AssetHistoryRecord, AssetNoteRecord, VaultRecord } from '../../lib/api';
 import { exportToCsv } from '../../lib/exportUtils';
+import { useToast } from '../Toast';
+import { useConfirm } from '../ConfirmModal';
 import { VaultsSection } from './inventory/VaultsSection';
 import { ConsumablesSection } from './inventory/ConsumablesSection';
 import { KitsSection } from './inventory/KitsSection';
@@ -34,6 +36,8 @@ export interface InventoryViewProps {
 }
 
 export const InventoryView: React.FC<InventoryViewProps> = ({ initialSubTab = 'assets', onSubTabChange }) => {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [activeSubTab, setActiveSubTab] = useState<'assets' | 'kits' | 'consumables' | 'vaults'>(initialSubTab);
 
   useEffect(() => {
@@ -211,6 +215,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ initialSubTab = 'a
       });
       await loadAssets();
       setShowAddModal(false);
+      toast.success('Equipment asset registered successfully');
       setNewAsset({
         name: '',
         code: '',
@@ -226,7 +231,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ initialSubTab = 'a
         useful_life_months: 36
       });
     } catch (err: any) {
-      alert(err.message || 'Failed to register equipment');
+      toast.error(err.message || 'Failed to register equipment');
     } finally {
       setIsSubmitting(false);
     }
@@ -246,8 +251,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ initialSubTab = 'a
     try {
       await api.updateAsset(asset.id, { status: 'on_shoot' });
       await loadAssets();
+      toast.success('Gear checked out for shoot');
     } catch (err: any) {
-      alert(err.message || 'Check-out failed');
+      toast.error(err.message || 'Check-out failed');
     }
   };
 
@@ -263,8 +269,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ initialSubTab = 'a
       });
       await loadAssets();
       setInspectingAsset(null);
+      toast.success('Return inspection recorded');
     } catch (err: any) {
-      alert(err.message || 'Return inspection failed');
+      toast.error(err.message || 'Return inspection failed');
     } finally {
       setIsInspecting(false);
     }
@@ -292,22 +299,31 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ initialSubTab = 'a
       });
       await loadAssets();
       setEditingAsset(null);
+      toast.success('Asset details updated');
     } catch (err: any) {
-      alert(err.message || 'Failed to update item details');
+      toast.error(err.message || 'Failed to update item details');
     } finally {
       setIsEditing(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this item from your vault?')) return;
+    const ok = await confirm({
+      title: 'Delete Asset',
+      message: 'Are you sure you want to delete this item from your vault? This action cannot be undone.',
+      confirmText: 'Delete Asset',
+      variant: 'danger'
+    });
+    if (!ok) return;
+
     try {
       setIsDeleting(true);
       setDeletingId(id);
       await api.deleteAsset(id);
       await loadAssets();
+      toast.success('Asset deleted successfully');
     } catch (err: any) {
-      alert(err.message || 'Failed to delete asset');
+      toast.error(err.message || 'Failed to delete asset');
     } finally {
       setIsDeleting(false);
       setDeletingId(null);
@@ -360,8 +376,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ initialSubTab = 'a
       setNewNoteText('');
       setShowAddNoteForm(false);
       await loadAssets();
+      toast.success('Asset note recorded');
     } catch (err: any) {
-      alert(err.message || 'Failed to record note');
+      toast.error(err.message || 'Failed to record note');
     } finally {
       setIsAddingNote(false);
     }

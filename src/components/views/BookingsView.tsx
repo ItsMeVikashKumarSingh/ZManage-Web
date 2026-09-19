@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { api, BookingCandidate, AssetRecord, WorkerRecord, AllocationRecord } from '../../lib/api';
 import { exportToCsv } from '../../lib/exportUtils';
+import { useToast } from '../Toast';
 
 const PRESET_PACKAGES: Record<string, { label: string; defaultPrice: number }> = {
   'Silver Wedding Package': { label: 'Silver Wedding Package', defaultPrice: 50000 },
@@ -18,6 +19,7 @@ const PRESET_PACKAGES: Record<string, { label: string; defaultPrice: number }> =
 };
 
 export const BookingsView: React.FC = () => {
+  const toast = useToast();
   const [bookings, setBookings] = useState<BookingCandidate[]>([]);
   const [existingAllocations, setExistingAllocations] = useState<AllocationRecord[]>([]);
   const [availableAssets, setAvailableAssets] = useState<AssetRecord[]>([]);
@@ -107,8 +109,14 @@ export const BookingsView: React.FC = () => {
 
   const handleCreateOfflineOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!offlineForm.client_name.trim()) return alert('Please enter client name');
-    if (!offlineForm.event_date) return alert('Please enter event date');
+    if (!offlineForm.client_name.trim()) {
+      toast.error('Please enter client name');
+      return;
+    }
+    if (!offlineForm.event_date) {
+      toast.error('Please enter event date');
+      return;
+    }
 
     const finalPackageName = offlineForm.package_preset === 'Custom'
       ? (offlineForm.custom_package_name.trim() || 'Custom Offline Shoot')
@@ -131,6 +139,7 @@ export const BookingsView: React.FC = () => {
 
       await loadData();
       setShowOfflineModal(false);
+      toast.success('Offline booking created successfully');
       setOfflineForm({
         client_name: '',
         client_phone: '',
@@ -145,7 +154,7 @@ export const BookingsView: React.FC = () => {
         notes: ''
       });
     } catch (err: any) {
-      alert(`Failed to create offline order: ${err.message}`);
+      toast.error(`Failed to create offline order: ${err.message}`);
     } finally {
       setIsSubmittingOffline(false);
     }
@@ -206,7 +215,10 @@ export const BookingsView: React.FC = () => {
 
   const handleConfirmShoot = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!shootForm.shoot_date) return alert('Please enter a shoot date');
+    if (!shootForm.shoot_date) {
+      toast.error('Please enter a shoot date');
+      return;
+    }
 
     try {
       setIsSubmittingShoot(true);
@@ -236,8 +248,9 @@ export const BookingsView: React.FC = () => {
 
       await loadData();
       setSchedulingBooking(null);
+      toast.success('Shoot scheduled and crew assigned successfully');
     } catch (err: any) {
-      alert(`Double-Booking Conflict: ${err.message}`);
+      toast.error(`Double-Booking Conflict: ${err.message}`);
     } finally {
       setIsSubmittingShoot(false);
     }

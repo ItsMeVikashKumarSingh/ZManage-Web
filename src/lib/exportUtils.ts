@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Universal CSV Exporter for ZManage Operations Consoles
  * Generates RFC-4180 compliant CSV files with UTF-8 BOM encoding for seamless Excel compatibility.
  */
@@ -8,10 +8,17 @@ export interface CsvColumn<T> {
   accessor: (item: T) => string | number | boolean | null | undefined;
 }
 
-export function exportToCsv<T>(filename: string, data: T[], columns: CsvColumn<T>[]): void {
+export function exportToCsv<T>(
+  filename: string,
+  data: T[],
+  columns: CsvColumn<T>[],
+  onError?: (msg: string) => void
+): boolean {
   if (!data || data.length === 0) {
-    alert('No records available to export.');
-    return;
+    if (onError) {
+      onError('No records available to export.');
+    }
+    return false;
   }
 
   const escapeCsv = (val: string | number | boolean | null | undefined): string => {
@@ -37,4 +44,5 @@ export function exportToCsv<T>(filename: string, data: T[], columns: CsvColumn<T
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+  return true;
 }

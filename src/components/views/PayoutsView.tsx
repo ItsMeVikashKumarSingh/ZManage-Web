@@ -5,8 +5,10 @@ import {
 } from 'lucide-react';
 import { api, PayoutRecord, PayoutsSummary, WorkerRecord } from '../../lib/api';
 import { exportToCsv } from '../../lib/exportUtils';
+import { useToast } from '../Toast';
 
 export const PayoutsView: React.FC = () => {
+  const toast = useToast();
   const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
   const [workers, setWorkers] = useState<WorkerRecord[]>([]);
   const [summary, setSummary] = useState<PayoutsSummary>({
@@ -95,8 +97,9 @@ export const PayoutsView: React.FC = () => {
       await loadData();
       setTarget(null);
       setUtr('');
+      toast.success('Payout settled successfully');
     } catch (err: any) {
-      alert(err.message || 'Settlement failed');
+      toast.error(err.message || 'Settlement failed');
     } finally {
       setIsSettling(false);
     }
@@ -105,7 +108,7 @@ export const PayoutsView: React.FC = () => {
   const handleCreatePayout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPayout.worker_id) {
-      alert('Please select a team member or contractor');
+      toast.error('Please select a team member or contractor');
       return;
     }
 
@@ -122,6 +125,7 @@ export const PayoutsView: React.FC = () => {
       });
       await loadData();
       setShowAddModal(false);
+      toast.success('Payout recorded successfully');
       setNewPayout({
         worker_id: workers[0]?.id || '',
         amount: 3500,
@@ -131,7 +135,7 @@ export const PayoutsView: React.FC = () => {
         reference_number: ''
       });
     } catch (err: any) {
-      alert(err.message || 'Failed to record payout');
+      toast.error(err.message || 'Failed to record payout');
     } finally {
       setIsCreating(false);
     }
