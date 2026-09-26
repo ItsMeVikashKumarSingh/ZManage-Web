@@ -9,6 +9,8 @@
   - Prioritizes native dedicated `ZManage-APIs` authentication (`${API_BASE_URL}/auth/login`), providing full RBAC permissions and project assignments.
   - Seamlessly fails over to Central Zorvik-Tech Auth if the native API is unavailable or returns an error.
   - Applied matching resilient failover strategy to password reset recovery requests (`/auth/forgot-password`).
+- **SPA Routing & Page Refresh 404 Fix (`vercel.json`)**:
+  - Added Vercel configuration with wildcard rewrites `/(.*) -> /index.html` to eliminate 404 NOT_FOUND errors on non-root URL refreshes (e.g. `/login`, `/dashboard`).
 
 ## [0.9.2] - 2026-09-19
 ### Native Alert/Confirm Elimination, Custom Glassmorphism Toast/Modal, Password Eye Toggle & Reset Password Flow
