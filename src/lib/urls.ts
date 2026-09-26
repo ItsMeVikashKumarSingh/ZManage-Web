@@ -57,6 +57,20 @@ export function getZorvikCentralAuthUrl(): string {
     if (!/^https?:\/\//i.test(url)) {
       url = `https://${url}`;
     }
+    // Prevent apex domain 307 CORS redirect drops from Cloudflare/Vercel
+    url = url.replace(/^https?:\/\/zorviktech\.com/i, 'https://www.zorviktech.com');
+    url = url.replace(/\/+$/, '');
+
+    // Ensure endpoint path is attached if only origin was supplied
+    if (!url.endsWith('/auth/login')) {
+      if (url.endsWith('/api/v1')) {
+        url = `${url}/auth/login`;
+      } else if (url.endsWith('/api')) {
+        url = `${url}/v1/auth/login`;
+      } else {
+        url = `${url}/api/v1/auth/login`;
+      }
+    }
     return url;
   }
 
@@ -79,6 +93,18 @@ export function getZorvikDemoApiUrl(): string {
     let url = envUrl.trim();
     if (!/^https?:\/\//i.test(url)) {
       url = `https://${url}`;
+    }
+    url = url.replace(/^https?:\/\/zorviktech\.com/i, 'https://www.zorviktech.com');
+    url = url.replace(/\/+$/, '');
+
+    if (!url.endsWith('/demo-request')) {
+      if (url.endsWith('/api/v1')) {
+        url = `${url}/demo-request`;
+      } else if (url.endsWith('/api')) {
+        url = `${url}/v1/demo-request`;
+      } else {
+        url = `${url}/api/v1/demo-request`;
+      }
     }
     return url;
   }

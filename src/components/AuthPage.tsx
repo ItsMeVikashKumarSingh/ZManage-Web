@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   ArrowRight,
   ShieldCheck,
@@ -35,37 +35,62 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccessLogin, onBackToHome
     setErrorMessage('');
 
     try {
-      // Primary: Central Zorvik-Tech Client Login API
-      // Fallback: Local API
-      const primaryUrl = getZorvikCentralAuthUrl();
-      const fallbackUrl = `${API_BASE_URL}/auth/login`;
+      // Primary: Native ZManage-APIs dedicated microservice route
+      // Secondary Fallback: Central Zorvik-Tech Client Login API
+      const zmanageAuthUrl = `${API_BASE_URL}/auth/login`;
+      const centralAuthUrl = getZorvikCentralAuthUrl();
 
-      let res: Response;
+      let res: Response | null = null;
+      let data: any = {};
+
+      // 1. Try ZManage-APIs native auth endpoint
       try {
-        res = await fetch(primaryUrl, {
+        const localRes = await fetch(zmanageAuthUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
+        const localData = await localRes.json().catch(() => ({}));
+        if (localRes.ok && localData.success) {
+          res = localRes;
+          data = localData;
+        } else {
+          data = localData;
+        }
       } catch {
-        // Fallback to local auth route if central server isn't reachable
-        res = await fetch(fallbackUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
+        res = null;
       }
 
-      const data = await res.json().catch(() => ({}));
+      // 2. If native ZManage-APIs was not successful, failover to Central Zorvik-Tech Auth
+      if (!res || !res.ok || !data.success) {
+        try {
+          const centralRes = await fetch(centralAuthUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          const centralData = await centralRes.json().catch(() => ({}));
+          if (centralRes.ok && centralData.success) {
+            res = centralRes;
+            data = centralData;
+          } else if (!data || (!data.error && !data.message)) {
+            data = centralData;
+          }
+        } catch {
+          // Central endpoint also unreachable
+        }
+      }
 
-      if (!res.ok || !data.success) {
+      if (!res || !res.ok || !data.success) {
         throw new Error(data?.message || data?.error || 'Authentication failed. Please verify credentials.');
       }
 
       const session = {
         tenantId: data.tenantId || data.project?.id || data.client?.id,
         clientName: data.client?.name || data.clientName || 'Studio Client',
-        token: data.token
+        token: data.token,
+        roleTier: data.roleTier || 'admin',
+        allowedTabs: data.allowedTabs || undefined
       };
 
       localStorage.setItem('zmanage_session', JSON.stringify(session));
@@ -84,28 +109,52 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccessLogin, onBackToHome
     setErrorMessage('');
 
     try {
-      const primaryUrl = getZorvikCentralAuthUrl().replace('/login', '/forgot-password');
-      const fallbackUrl = `${API_BASE_URL}/auth/forgot-password`;
+      const zmanageForgotUrl = `${API_BASE_URL}/auth/forgot-password`;
+      const centralForgotUrl = getZorvikCentralAuthUrl().replace('/login', '/forgot-password');
       const redirectTo = `${window.location.origin}/reset-password`;
 
-      let res: Response;
+      let res: Response | null = null;
+      let data: any = {};
+
+      // 1. Try ZManage-APIs native forgot password
       try {
-        res = await fetch(primaryUrl, {
+        const localRes = await fetch(zmanageForgotUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, redirectTo })
         });
+        const localData = await localRes.json().catch(() => ({}));
+        if (localRes.ok && localData.success) {
+          res = localRes;
+          data = localData;
+        } else {
+          data = localData;
+        }
       } catch {
-        res = await fetch(fallbackUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, redirectTo })
-        });
+        res = null;
       }
 
-      const data = await res.json().catch(() => ({}));
+      // 2. Failover to Central Zorvik-Tech if native was not successful
+      if (!res || !res.ok || !data.success) {
+        try {
+          const centralRes = await fetch(centralForgotUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, redirectTo })
+          });
+          const centralData = await centralRes.json().catch(() => ({}));
+          if (centralRes.ok && centralData.success) {
+            res = centralRes;
+            data = centralData;
+          } else if (!data || (!data.error && !data.message)) {
+            data = centralData;
+          }
+        } catch {
+          // Central endpoint also unreachable
+        }
+      }
 
-      if (!res.ok || !data.success) {
+      if (!res || !res.ok || !data.success) {
         throw new Error(data?.error || data?.message || 'Failed to send recovery email. Please try again.');
       }
 

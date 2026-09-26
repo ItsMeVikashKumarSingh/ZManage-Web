@@ -1,5 +1,15 @@
 # ZManage-Web Changelog
 
+## [0.9.3] - 2026-09-26
+### Resilient Auth Strategy, Apex Domain CORS Fix & Endpoint Path Enforcement
+- **Apex Domain & Endpoint Normalization (`src/lib/urls.ts`)**:
+  - Automatically converts apex domain `zorviktech.com` to `www.zorviktech.com` in `getZorvikCentralAuthUrl()` and `getZorvikDemoApiUrl()` to eliminate 307 temporary redirect CORS blocks from Cloudflare/Vercel.
+  - Enforces mandatory `/api/v1/auth/login` and `/api/v1/demo-request` path attachments if only origin/hostname was provided in environment variables.
+- **Resilient Multi-Endpoint Auth Failover (`src/components/AuthPage.tsx`)**:
+  - Prioritizes native dedicated `ZManage-APIs` authentication (`${API_BASE_URL}/auth/login`), providing full RBAC permissions and project assignments.
+  - Seamlessly fails over to Central Zorvik-Tech Auth if the native API is unavailable or returns an error.
+  - Applied matching resilient failover strategy to password reset recovery requests (`/auth/forgot-password`).
+
 ## [0.9.2] - 2026-09-19
 ### Native Alert/Confirm Elimination, Custom Glassmorphism Toast/Modal, Password Eye Toggle & Reset Password Flow
 - **Elimination of Browser Native Dialogs (`alert`, `confirm`)**:
