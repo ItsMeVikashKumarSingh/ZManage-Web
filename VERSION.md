@@ -1,5 +1,23 @@
 # ZManage-Web Changelog
 
+## [0.9.5] - 2026-09-26
+### Reusable CustomSelect Component & ConfirmModal Cyber-Motion Enhancement
+- **Reusable CustomSelect Component (`src/components/ui/CustomSelect.tsx`)**:
+  - Implemented standard Glassmorphism 2.0 select component with smooth open/close animations, active state checkmarks, rotated chevrons, and optional search filtering.
+  - Replaced native `<select>` dropdowns in `CrewView.tsx` (primary role, contract type, custom role, status, and bulk import settings).
+- **Framer Motion ConfirmModal (`src/components/ConfirmModal.tsx`)**:
+  - Upgraded confirmation modal with Framer Motion spring enter/exit transitions and keyboard `Escape` dismissal while preserving full backward compatibility for `useConfirm()`.
+
+## [0.9.4] - 2026-09-26
+### Monogram Elimination & RMS Self-Healing Operational Fix
+- **RMS Self-Healing & Fallback Auto-Switch (`src/components/DashboardLayout.tsx`)**:
+  - Enhanced the access verification resolution logic: when a project target ID lacks RMS enabled, the dashboard scans `availableProjects` and automatically routes the workspace to the primary active RMS-enabled project instead of falsely locking the user out on `RmsDisabledPage`.
+- **Session Metadata Persistence (`src/components/AuthPage.tsx`)**:
+  - Explicitly persisted `projectId`, `projectName`, and `rmsEnabled` in local session storage across both native ZManage-APIs and Zorvik-Tech Central Auth login pipelines.
+- **Sidebar Workspace Switcher & Rail (`src/components/DashboardLayout.tsx`)**:
+  - Eliminated letter-monogram fallback boxes (`{initial}`) across both expanded and collapsed workspace switcher navigation rails.
+  - Replaced monogram badges with standard clean `FolderKanban` iconography, strictly adhering to the "either logo or nothing" design standard.
+
 ## [0.9.3] - 2026-09-26
 ### Resilient Auth Strategy, Apex Domain CORS Fix & Endpoint Path Enforcement
 - **Apex Domain & Endpoint Normalization (`src/lib/urls.ts`)**:

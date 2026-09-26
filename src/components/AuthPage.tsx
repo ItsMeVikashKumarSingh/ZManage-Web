@@ -87,10 +87,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccessLogin, onBackToHome
 
       const session = {
         tenantId: data.tenantId || data.project?.id || data.client?.id,
+        projectId: data.project?.id || data.projects?.[0]?.id || data.tenantId,
+        projectName: data.project?.name || data.projects?.[0]?.name,
         clientName: data.client?.name || data.clientName || 'Studio Client',
         token: data.token,
         roleTier: data.roleTier || 'admin',
-        allowedTabs: data.allowedTabs || undefined
+        allowedTabs: data.allowedTabs || undefined,
+        rmsEnabled: data.rmsEnabled ?? (data.projects && data.projects.length > 0 ? true : undefined)
       };
 
       localStorage.setItem('zmanage_session', JSON.stringify(session));

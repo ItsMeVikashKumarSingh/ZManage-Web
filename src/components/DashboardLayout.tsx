@@ -95,7 +95,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         setProjects(available);
 
         if (!accessRes.hasAccess || !accessRes.rmsEnabled) {
-          setIsRmsDisabled(true);
+          // If this project does not have RMS enabled, but the tenant has other available RMS projects,
+          // automatically auto-switch to the primary/first active RMS workspace
+          if (available.length > 0) {
+            const fallbackProject = available.find(p => p.id !== targetProjId) || available[0];
+            setCurrentProjectId(fallbackProject.id);
+            setCurrentProjectName(fallbackProject.name);
+            setIsRmsDisabled(false);
+          } else {
+            setIsRmsDisabled(true);
+          }
         } else {
           setIsRmsDisabled(false);
           if (accessRes.projectId) {
@@ -107,7 +116,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         }
       })
       .catch(() => {
-        setIsRmsDisabled(true);
+        // Only disable RMS if there is no valid project identified
+        if (!targetProjId) {
+          setIsRmsDisabled(true);
+        }
       })
       .finally(() => {
         setIsVerifyingAccess(false);
@@ -192,7 +204,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const navItems = navSections.flatMap(s => s.items);
 
   const displayName = currentProjectName || projectName || clientName || 'Enterprise Operations';
-  const initial = displayName.charAt(0).toUpperCase();
 
   // Verification loading state
   if (isVerifyingAccess) {
@@ -241,8 +252,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   title="Switch Workspace / Project"
                 >
                   <div className="flex items-center gap-2 overflow-hidden min-w-0">
-                    <div className="w-7 h-7 rounded-lg bg-charcoal dark:bg-zinc-800 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                      {initial}
+                    <div className="w-7 h-7 rounded-lg bg-charcoal dark:bg-zinc-800 text-white flex items-center justify-center shrink-0">
+                      <FolderKanban className="w-3.5 h-3.5" />
                     </div>
                     <div className="truncate text-left min-w-0">
                       <div className="text-xs font-semibold text-charcoal dark:text-zinc-100 truncate">{displayName}</div>
@@ -278,8 +289,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   className="w-full h-10 rounded-xl border border-ash dark:border-zinc-800 bg-paper dark:bg-zinc-900 hover:bg-smoke/10 dark:hover:bg-zinc-800 flex items-center justify-center transition cursor-pointer"
                   title="Switch project"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-charcoal dark:bg-zinc-800 text-white flex items-center justify-center font-bold text-xs">
-                    {initial}
+                  <div className="w-7 h-7 rounded-lg bg-charcoal dark:bg-zinc-800 text-white flex items-center justify-center shrink-0">
+                    <FolderKanban className="w-3.5 h-3.5" />
                   </div>
                 </button>
               </div>
