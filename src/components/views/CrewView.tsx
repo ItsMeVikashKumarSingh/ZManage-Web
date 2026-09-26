@@ -7,6 +7,7 @@ import { api, WorkerRecord, ImportCandidate } from '../../lib/api';
 import { exportToCsv } from '../../lib/exportUtils';
 import { useToast } from '../Toast';
 import { useConfirm } from '../ConfirmModal';
+import { CustomSelect } from '../ui/CustomSelect';
 
 const STANDARD_ROLES = [
   'Lead Cinematographer',
@@ -646,33 +647,28 @@ export const CrewView: React.FC = () => {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-steel mb-1">Primary Role *</label>
-                  <select
+                  <CustomSelect
                     value={STANDARD_ROLES.includes(newWorker.primary_role) ? newWorker.primary_role : 'Other / Custom'}
-                    onChange={e => {
-                      const val = e.target.value;
+                    onChange={val => {
                       setNewWorker({ ...newWorker, primary_role: val });
                       if (val !== 'Other / Custom') {
                         setCustomRoleInput('');
                       }
                     }}
-                    className="dub-input w-full text-xs font-medium"
-                  >
-                    {STANDARD_ROLES.map(role => (
-                      <option key={role} value={role}>{role}</option>
-                    ))}
-                  </select>
+                    options={STANDARD_ROLES.map(role => ({ value: role, label: role }))}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-steel mb-1">Contract / Worker Type *</label>
-                  <select
+                  <CustomSelect
                     value={newWorker.worker_type}
-                    onChange={e => setNewWorker({ ...newWorker, worker_type: e.target.value as any })}
-                    className="dub-input w-full text-xs font-medium"
-                  >
-                    <option value="freelance">Freelance</option>
-                    <option value="contractor">Contractor</option>
-                    <option value="in_house">In-House Staff</option>
-                  </select>
+                    onChange={val => setNewWorker({ ...newWorker, worker_type: val as any })}
+                    options={[
+                      { value: 'freelance', label: 'Freelance' },
+                      { value: 'contractor', label: 'Contractor' },
+                      { value: 'in_house', label: 'In-House Staff' },
+                    ]}
+                  />
                 </div>
               </div>
 
@@ -771,35 +767,30 @@ export const CrewView: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-steel mb-1">Contract / Worker Type *</label>
-                  <select
+                  <CustomSelect
                     value={editingWorker.worker_type || 'freelance'}
-                    onChange={e => setEditingWorker({ ...editingWorker, worker_type: e.target.value as any })}
-                    className="dub-input w-full text-xs font-medium"
-                  >
-                    <option value="freelance">Freelance</option>
-                    <option value="contractor">Contractor</option>
-                    <option value="in_house">In-House Staff</option>
-                  </select>
+                    onChange={val => setEditingWorker({ ...editingWorker, worker_type: val as any })}
+                    options={[
+                      { value: 'freelance', label: 'Freelance' },
+                      { value: 'contractor', label: 'Contractor' },
+                      { value: 'in_house', label: 'In-House Staff' },
+                    ]}
+                  />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-steel mb-1">Role *</label>
-                <select
+                <CustomSelect
                   value={STANDARD_ROLES.includes(editingWorker.primary_role) ? editingWorker.primary_role : 'Other / Custom'}
-                  onChange={e => {
-                    const val = e.target.value;
+                  onChange={val => {
                     setEditingWorker({ ...editingWorker, primary_role: val });
                     if (val !== 'Other / Custom') {
                       setEditingCustomRole('');
                     }
                   }}
-                  className="dub-input w-full text-xs font-medium"
-                >
-                  {STANDARD_ROLES.map(role => (
-                    <option key={role} value={role}>{role}</option>
-                  ))}
-                </select>
+                  options={STANDARD_ROLES.map(role => ({ value: role, label: role }))}
+                />
               </div>
 
               {(!STANDARD_ROLES.includes(editingWorker.primary_role) || editingWorker.primary_role === 'Other / Custom') && (
@@ -829,15 +820,15 @@ export const CrewView: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-steel mb-1">Status</label>
-                  <select
+                  <CustomSelect
                     value={editingWorker.status}
-                    onChange={e => setEditingWorker({ ...editingWorker, status: e.target.value as any })}
-                    className="dub-input w-full text-xs"
-                  >
-                    <option value="active">Active</option>
-                    <option value="on_leave">On Leave</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                    onChange={val => setEditingWorker({ ...editingWorker, status: val as any })}
+                    options={[
+                      { value: 'active', label: 'Active' },
+                      { value: 'on_leave', label: 'On Leave' },
+                      { value: 'inactive', label: 'Inactive' },
+                    ]}
+                  />
                 </div>
               </div>
 
@@ -952,15 +943,15 @@ export const CrewView: React.FC = () => {
                   <label className="block text-xs font-medium text-steel mb-1">
                     Contract / Worker Type *
                   </label>
-                  <select
+                  <CustomSelect
                     value={defaultImportWorkerType}
-                    onChange={e => setDefaultImportWorkerType(e.target.value as any)}
-                    className="dub-input w-full text-xs font-medium"
-                  >
-                    <option value="freelance">Freelance</option>
-                    <option value="contractor">Contractor</option>
-                    <option value="in_house">In-House Staff</option>
-                  </select>
+                    onChange={val => setDefaultImportWorkerType(val as any)}
+                    options={[
+                      { value: 'freelance', label: 'Freelance' },
+                      { value: 'contractor', label: 'Contractor' },
+                      { value: 'in_house', label: 'In-House Staff' },
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-steel mb-1">
